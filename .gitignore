@@ -1,0 +1,45 @@
+
+# ignore all
+*/**/*
+/*
+
+# include some root files
+!.gitignore
+!Gruntfile.js
+!package.json
+!package-lock.json
+!.eslintrc.json
+!bower.json
+!.bowerrc
+!composer.json
+!composer.lock
+!CHANGELOG.md
+!.wde_nextRelease.json
+!README.md
+!yaml-importer.php
+
+# include dir grunt
+!/grunt
+!grunt/**/*
+
+# include dir src
+!/src
+!src/**/*
+
+# include dir dist/trunk
+!/dist
+/dist/*
+!dist/trunk
+!dist/trunk/**/*
+!dist/assets
+!dist/assets/**/*
+
+# ignore certain file patterns
+.DS_Store
+*/**/.DS_Store
+*.marks
+*/**/*.marks
+*~
+*/**/*~
+#*#
+*/**/#*#
