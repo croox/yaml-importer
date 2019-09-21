@@ -1,6 +1,6 @@
 {
   "name": "yaml-importer",
-  "displayName": "Yaml Importer",
+  "displayName": "YAML Importer",
   "funcPrefix": "yaim",
   "uri": "https://github.com/croox/yaml-importer",
   "textDomain": "yaim",
