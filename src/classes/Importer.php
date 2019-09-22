@@ -68,14 +68,14 @@ class Importer {
 		if ( $this->is_wpml_import && ! class_exists( 'SitePress' ) )
 			return;
 
-		if ( is_wp_error( $this->setup_posts_atts( $data ) ) )
+		if ( is_wp_error( $this->setup_post_atts( $data ) ) )
 			return;
 
-		$this->insert_posts( $data );
+		$this->insert_post( $data );
 
 	}
 
-	protected function insert_posts() {
+	protected function insert_post() {
 
 		if ( class_exists( 'SitePress' ) ) {
 			global $sitepress;
@@ -94,7 +94,7 @@ class Importer {
 				// merge post_atts for all into current post_atts
 				$post_atts = array_merge(
 					$post_atts,
-					utils\Arr::get( $this->post, 'all' )
+					utils\Arr::get( $this->post, 'all', array() )
 				);
 
 				$post_atts = apply_filters( 'yaim_post_atts_wpml',
@@ -110,7 +110,7 @@ class Importer {
 				if ( is_wp_error( $post_id ) )
 					continue;
 
-				$instered[] = $post_id;
+				$instered[$lang] = $post_id;
 
 				// post_trid of first inserted post
 				$post_trid = null === $post_trid
@@ -215,7 +215,7 @@ class Importer {
 
 	}
 
-	protected function setup_posts_atts( $data ) {
+	protected function setup_post_atts( $data ) {
 		$post = $this->post;
 		foreach( $data as $key => $attr ) {
 			if ( is_array( $attr ) ) {
