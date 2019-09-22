@@ -44,38 +44,39 @@ class Importer {
 		if ( array_key_exists( 'posts', $file_data ) ) {
 
 			// classify_post_atts_by_lang and check is_wpml_import
-			foreach( $file_data['posts'] as $i => $raw_data ) {
+			foreach( $file_data['posts'] as $post_i => $post_raw_data ) {
 
-				// clean raw_data from not allowed fields
+				// clean post_raw_data from not allowed fields
 				foreach( array(
 					'ID',
 					'guid',
-				) as $i => $not_allowed ) {
-					if ( array_key_exists( $not_allowed, $raw_data ) ) {
-						unset( $raw_data[$not_allowed] );
+				) as $not_allowed ) {
+					if ( array_key_exists( $not_allowed, $post_raw_data ) ) {
+						unset( $post_raw_data[$not_allowed] );
 					}
 				}
 
 				// check if is_wpml_import for this post
 				$is_wpml_import = false;
-				foreach( $raw_data as $key => $attr ) {
+				foreach( $post_raw_data as $key => $attr ) {
 					if ( $is_wpml_import )
 						break;
 					$is_wpml_import = is_array( $attr )
 						&& substr( array_keys( $attr )[0], 0, strlen( 'wpml_' )) === 'wpml_';
 				}
 
-				$this->posts[$i] = array(
+				$this->posts[$post_i] = array(
 					'is_wpml_import'	=> $is_wpml_import,
 					'inserted'			=> array(),
-					'atts' 				=> $this->classify_post_atts_by_lang( $raw_data ),
-					// 'raw_data'			=> $raw_data,
+					'atts' 				=> $this->classify_post_atts_by_lang( $post_raw_data ),
+					// 'post_raw_data'			=> $post_raw_data,
 				);
+
 			}
 
 			// classify_post_atts_by_validy for wp_insert_post function
 			// and fix_insert_post_args
-			foreach( $this->posts as $i => $post ) {
+			foreach( $this->posts as $post_i => $post ) {
 				if ( $post['is_wpml_import'] ) {
 					foreach( $post['atts'] as $lang => $atts ) {
 						if ( 'all' === $lang )
@@ -84,21 +85,21 @@ class Importer {
 						// merge atts for all into current atts_by_lang
 						$atts = array_merge(
 							$atts,
-							utils\Arr::get( $this->posts, $i . '.atts.all', array() )
+							utils\Arr::get( $this->posts, $post_i . '.atts.all', array() )
 						);
 
 						$atts = $this->classify_post_atts_by_validy( $atts, $post['is_wpml_import'] );
 
 						$atts = $this->fix_insert_post_args( $atts );
 
-						$this->posts[$i]['atts'][$lang] = apply_filters( 'yaim_post_atts', $atts, $lang, $post );
+						$this->posts[$post_i]['atts'][$lang] = apply_filters( 'yaim_post_atts', $atts, $lang, $post );
 					}
 				} else {
 					$atts = $this->classify_post_atts_by_validy( utils\Arr::get( $post, 'atts.all', array() ), $post['is_wpml_import'] );
 
 					$atts = $this->fix_insert_post_args( $atts );
 
-					$this->posts[$i]['atts']['all'] = apply_filters( 'yaim_post_atts', $atts, 'all', $post );
+					$this->posts[$post_i]['atts']['all'] = apply_filters( 'yaim_post_atts', $atts, 'all', $post );
 				}
 			}
 
@@ -311,9 +312,9 @@ class Importer {
 		return $classified_post_atts;
 	}
 
-	protected function classify_post_atts_by_lang( $raw_data ) {
+	protected function classify_post_atts_by_lang( $post_raw_data ) {
 		$atts = array();
-		foreach( $raw_data as $key => $attr ) {
+		foreach( $post_raw_data as $key => $attr ) {
 			if ( is_array( $attr ) ) {
 				$keys_starts_wpml_ = array_unique( array_map( function( $k ) {
 					return substr( $k, 0, strlen( 'wpml_' ) ) === 'wpml_';
