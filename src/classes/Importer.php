@@ -74,6 +74,7 @@ class Importer {
 			}
 
 			// classify_post_atts_by_validy for wp_insert_post function
+			// and fix_insert_post_args
 			foreach( $this->posts as $i => $post ) {
 				if ( $post['is_wpml_import'] ) {
 					foreach( $post['atts'] as $lang => $atts ) {
@@ -88,16 +89,59 @@ class Importer {
 
 						$atts = $this->classify_post_atts_by_validy( $atts );
 
+						$atts = $this->fix_insert_post_args( $atts );
+
 						$this->posts[$i]['atts'][$lang] = apply_filters( 'yaim_post_atts', $atts, $lang, $post );
 					}
 				} else {
 					$atts = $this->classify_post_atts_by_validy( utils\Arr::get( $post, 'atts.all', array() ) );
+
+					$atts = $this->fix_insert_post_args( $atts );
 
 					$this->posts[$i]['atts']['all'] = apply_filters( 'yaim_post_atts', $atts, 'all', $post );
 				}
 			}
 
 		}
+	}
+
+	protected function fix_insert_post_args( $atts ) {
+
+		foreach( array(
+			'insert_post_args',
+		) as $to_fix ) {
+
+			// for hierarchical taxonomies, tax_input should be array of taxonomy term ids
+			// for nonhierarchical taxonomies, tax_input should be array of taxonomy term slugs
+			if ( array_key_exists( 'tax_input', $atts[$to_fix] ) ) {
+				foreach( $atts[$to_fix]['tax_input'] as $tax_slug => $terms ) {
+					$tax = get_taxonomy( $tax_slug );
+
+					if ( $tax->hierarchical ) {
+						foreach( $terms as $term_i => $term_slug_or_id ) {
+							if ( is_numeric( $term_slug_or_id ) && $term_slug_or_id == (int) $term_slug_or_id )
+								continue;
+							$term = get_term_by( 'slug', $term_slug_or_id, $tax->name );
+
+							if ( $term )
+								$atts[$to_fix]['tax_input'][$tax_slug][$term_i] = $term->term_id;
+						}
+					} else {
+						foreach( $terms as $term_slug_or_id ) {
+							if ( is_string( $term_slug_or_id ) )
+								continue;
+							$term = get_term_by( 'id', $term_slug_or_id, $tax->name );
+							if ( $term )
+								$atts[$to_fix]['tax_input'][$tax_slug][$term_i] = $term->slug;
+						}
+					}
+
+				}
+			}
+
+		}
+
+		return $atts;
 	}
 
 	protected function insert_objects() {
