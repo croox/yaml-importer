@@ -1,9 +1,9 @@
 <?php
 /*
-	Plugin Name: Yaml Importer
+	Plugin Name: YAML Importer
 	Plugin URI: https://github.com/croox/yaml-importer
 	Description: Import Posts from YAML
-	Version: 0.0.0
+	Version: 0.0.1
 	Author: croox
 	Author URI: https://github.com/croox
 	License: GNU General Public License v2 or later
