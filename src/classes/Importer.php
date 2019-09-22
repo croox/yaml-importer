@@ -226,7 +226,7 @@ class Importer {
 				$args = array_merge(
 					array(
 						'ID' => $post_id,
-						'post_type' => utils\Arr::get( $atts_by_lang, 'insert_post_args.post_type' ),
+						'post_type' => get_post_type( $post_id ),
 						// 'post_excerpt' => $post_id,
 					),
 					$atts_by_lang['deferred_insert_post_args']
@@ -313,7 +313,15 @@ class Importer {
 	}
 
 	protected function classify_post_atts_by_lang( $post_raw_data ) {
-		$atts = array();
+		$atts = array(
+			'all' => array()
+		);
+
+		// first key is default language
+		$default_lang = apply_filters( 'wpml_default_language', null );
+		if ( null !== $default_lang )
+			$atts[$default_lang] = array();
+
 		foreach( $post_raw_data as $key => $attr ) {
 			if ( is_array( $attr ) ) {
 				$keys_starts_wpml_ = array_unique( array_map( function( $k ) {
