@@ -67,7 +67,7 @@ class Importer {
 
 				$this->posts[$i] = array(
 					'is_wpml_import'	=> $is_wpml_import,
-					'instered'			=> array(),
+					'inserted'			=> array(),
 					'atts' 				=> $this->classify_post_atts_by_lang( $raw_data ),
 					// 'raw_data'			=> $raw_data,
 				);
@@ -87,14 +87,14 @@ class Importer {
 							utils\Arr::get( $this->posts, $i . '.atts.all', array() )
 						);
 
-						$atts = $this->classify_post_atts_by_validy( $atts );
+						$atts = $this->classify_post_atts_by_validy( $atts, $post['is_wpml_import'] );
 
 						$atts = $this->fix_insert_post_args( $atts );
 
 						$this->posts[$i]['atts'][$lang] = apply_filters( 'yaim_post_atts', $atts, $lang, $post );
 					}
 				} else {
-					$atts = $this->classify_post_atts_by_validy( utils\Arr::get( $post, 'atts.all', array() ) );
+					$atts = $this->classify_post_atts_by_validy( utils\Arr::get( $post, 'atts.all', array() ), $post['is_wpml_import'] );
 
 					$atts = $this->fix_insert_post_args( $atts );
 
@@ -109,11 +109,14 @@ class Importer {
 
 		foreach( array(
 			'insert_post_args',
+			'deferred_insert_post_args',
 		) as $to_fix ) {
 
 			// for hierarchical taxonomies, tax_input should be array of taxonomy term ids
 			// for nonhierarchical taxonomies, tax_input should be array of taxonomy term slugs
-			if ( array_key_exists( 'tax_input', $atts[$to_fix] ) ) {
+			if ( array_key_exists( $to_fix, $atts ) &&
+				array_key_exists( 'tax_input', $atts[$to_fix] )
+			) {
 				foreach( $atts[$to_fix]['tax_input'] as $tax_slug => $terms ) {
 					$tax = get_taxonomy( $tax_slug );
 
@@ -135,7 +138,6 @@ class Importer {
 								$atts[$to_fix]['tax_input'][$tax_slug][$term_i] = $term->slug;
 						}
 					}
-
 				}
 			}
 
@@ -163,8 +165,8 @@ class Importer {
 		}
 
 		$post_trid = null;
-		// $instered = array();
 		if ( $post['is_wpml_import'] ) {
+
 			foreach( $post['atts'] as $lang => $atts_by_lang ) {
 				if ( 'all' === $lang )
 					continue;
@@ -174,7 +176,8 @@ class Importer {
 				if ( is_wp_error( $post_id ) )
 					continue;
 
-				$this->posts[$i]['instered'][$lang] = $post_id;
+				$post['inserted'][$lang] = $post_id;
+				$this->posts[$i]['inserted'][$lang] = $post_id;
 
 				// post_trid of first inserted post
 				$post_trid = null === $post_trid
@@ -205,11 +208,41 @@ class Importer {
 
 			}
 
+			// ??? do the deferred
+			foreach( $post['atts'] as $lang => $atts_by_lang ) {
+				if ( 'all' === $lang )
+					continue;
+
+				if ( ! array_key_exists( 'deferred_insert_post_args', $atts_by_lang )
+					|| empty( $atts_by_lang['deferred_insert_post_args'] ) )
+					continue;
+
+				$post_id = utils\Arr::get( $post, 'inserted.' . $lang, false );
+
+				if ( ! $post_id )
+					continue;
+
+				$args = array_merge(
+					array(
+						'ID' => $post_id,
+						'post_type' => utils\Arr::get( $atts_by_lang, 'insert_post_args.post_type' ),
+						// 'post_excerpt' => $post_id,
+					),
+					$atts_by_lang['deferred_insert_post_args']
+				);
+
+				if ( ! array_key_exists( 'post_title', $args ) )
+					$args['post_title'] = utils\Arr::get( $atts_by_lang, 'insert_post_args.post_title' );
+
+				$post_id = wp_update_post( $args, true );
+			}
+
+
 			do_action( 'yaim_post_inserted', $this->posts[$i], $post_trid );
 
 		} else {
 			$post_id = wp_insert_post( utils\Arr::get( $post, 'atts.all.insert_post_args', array() ) );
-			$this->posts[$i]['instered']['all'] = $post_id;
+			$this->posts[$i]['inserted']['all'] = $post_id;
 			if ( ! is_wp_error( $post_id ) ) {
 				do_action( 'yaim_post_inserted', $this->posts[$i], null );
 			}
@@ -221,7 +254,7 @@ class Importer {
 		}
 	}
 
-	protected function classify_post_atts_by_validy( $post_atts ) {
+	protected function classify_post_atts_by_validy( $post_atts, $use_deferred ) {
 
 		$valid_insert_post_args = array(
 			'post_author',
@@ -250,21 +283,32 @@ class Importer {
 			'meta_input',
 		);
 
-		$insert_post_args = array();
-		$custom_args = array();
+		// ??? should check wpml actually,
+		// may be more synchronized and should be deferred: eg ping_status, post_password ...
+		$deferred_insert_post_args = array(
+			'post_category',
+			'tags_input',
+			'tax_input',
+			'meta_input',
+		);
+
+		$classified_post_atts = array(
+			'insert_post_args'			=> array(),
+			'deferred_insert_post_args'	=> array(),
+			'custom_args'				=> array(),
+		);
+
 		foreach( $post_atts as $key => $val ) {
-			if ( in_array( $key, $valid_insert_post_args ) ) {
-				$insert_post_args[$key] = $val;
+			if ( $use_deferred && in_array( $key, $deferred_insert_post_args ) ) {
+				$classified_post_atts['deferred_insert_post_args'][$key] = $val;
+			} elseif ( in_array( $key, $valid_insert_post_args ) ) {
+				$classified_post_atts['insert_post_args'][$key] = $val;
 			} else {
-				$custom_args[$key] = $val;
+				$classified_post_atts['custom_args'][$key] = $val;
 			}
 		}
 
-		return array(
-			'insert_post_args'	=> $insert_post_args,
-			'custom_args'		=> $custom_args,
-		);
-
+		return $classified_post_atts;
 	}
 
 	protected function classify_post_atts_by_lang( $raw_data ) {
