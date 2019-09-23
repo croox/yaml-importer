@@ -17,6 +17,8 @@ abstract class Import_Base {
 
 	protected $active_langs = array();
 
+	protected $autop_keys = array();
+
 	protected $log = array();
 
 	public function __construct( $objects ){
@@ -122,10 +124,6 @@ abstract class Import_Base {
 		if ( null !== $default_lang )
 			$atts[$default_lang] = array();
 
-		$may_be_nested_keys = array(
-			'meta_input',
-		);
-
 		foreach( $object_raw_data as $key => $attr ) {
 			if ( is_array( $attr ) ) {
 
@@ -142,7 +140,7 @@ abstract class Import_Base {
 							if ( in_array( $key, $not_translatable ) ) {
 								return new \WP_Error( 'attr_not_translatable', sprintf( __( '"%s" is not translatable.', 'yaim' ), $key ) );
 							} else {
-								$atts[$lang][$key] = $val;
+								$atts[$lang][$key] = $this->maybe_autop( $key, $val );
 							}
 						} else {
 							$this->log[] = "ERROR: \$lang={$lang} not acive";
@@ -163,26 +161,33 @@ abstract class Import_Base {
 								foreach( $n_attr as $lang => $val ) {
 									$lang = str_replace( 'wpml_', '', $lang );
 									if ( in_array( $lang, $this->active_langs ) ) {
-										$atts[$lang][$key][$n_key] = $val;
+										$atts[$lang][$key][$n_key] = $this->maybe_autop( $n_key, $val );
 									} else {
 										$this->log[] = "ERROR: \$lang={$lang} not acive";
 									}
 								}
 							} else { // is normal field
-								$atts['all'][$key][$n_key] = $n_attr;
+								$atts['all'][$key][$n_key] = $this->maybe_autop( $n_key, $n_attr );
 							}
 
 						} else { // is normal field
-							$atts['all'][$key][$n_key] = $n_attr;
+							$atts['all'][$key][$n_key] = $this->maybe_autop( $n_key, $n_attr );
 						}
 					}
 				}
 
 			} else { // is normal field
-				$atts['all'][$key] = $attr;
+				$atts['all'][$key] = $this->maybe_autop( $key, $attr );
 			}
 		}
 		return $atts;
+	}
+
+	protected function maybe_autop( $key, $val ) {
+		$autop_keys = apply_filters( "yaim_{$this->type}_autop_keys", $this->autop_keys );
+		return in_array( $key, $autop_keys )
+			? wpautop( $val )
+			: $val;
 	}
 
 	protected function is_wpml_attr( $key, $keys ) {

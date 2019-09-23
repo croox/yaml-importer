@@ -13,6 +13,10 @@ class Import_Terms extends Import_Base {
 
 	protected $type = 'term';
 
+	protected $autop_keys = array(
+		'description',
+	);
+
 	protected function setup_import_data( $objects ) {
 
 		// classify_atts_by_lang and check is_wpml_import

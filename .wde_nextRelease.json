@@ -7,6 +7,10 @@
     {
       "type": "added",
       "message": "Handle `meta_input` field for Term imports"
+    },
+    {
+      "type": "added",
+      "message": "Use `wpautop`for certain fields. Fields are filtered by \"yaim_{$this->type}_autop_keys\" filter"
     }
   ]
 }

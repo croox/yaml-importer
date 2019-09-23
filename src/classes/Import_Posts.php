@@ -13,6 +13,11 @@ class Import_Posts extends Import_Base {
 
 	protected $type = 'post';
 
+	protected $autop_keys = array(
+		'post_content',
+		'post_excerpt',
+	);
+
 	protected function setup_import_data( $objects ) {
 
 		// classify_atts_by_lang and check is_wpml_import
