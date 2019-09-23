@@ -159,7 +159,9 @@ class ComposerStaticInit4175d1eef81cb139c295a9a6bbc01838
         'croox\\wde\\utils\\Post' => __DIR__ . '/..' . '/croox/wp-dev-env-frame/src/utils/Post.php',
         'croox\\wde\\utils\\Post_Type' => __DIR__ . '/..' . '/croox/wp-dev-env-frame/src/utils/Post_Type.php',
         'croox\\wde\\utils\\Wpml' => __DIR__ . '/..' . '/croox/wp-dev-env-frame/src/utils/Wpml.php',
-        'yaim\\Importer' => __DIR__ . '/../..' . '/classes/Importer.php',
+        'yaim\\Import_Base' => __DIR__ . '/../..' . '/classes/Import_Base.php',
+        'yaim\\Import_Posts' => __DIR__ . '/../..' . '/classes/Import_Posts.php',
+        'yaim\\Import_Terms' => __DIR__ . '/../..' . '/classes/Import_Terms.php',
         'yaim\\Settings_Page' => __DIR__ . '/../..' . '/classes/Settings_Page.php',
         'yaim\\Yaim' => __DIR__ . '/../..' . '/classes/Yaim.php',
     );
