@@ -141,6 +141,35 @@ class Import_Terms extends Import_Base {
 			);
 		}
 
+		// handle meta_input
+		foreach( $object['atts'] as $lang => $atts_by_lang ) {
+			if ( 'all' === $lang )
+				continue;
+
+			$meta_input = utils\Arr::get( $atts_by_lang,'custom_args.meta_input' );
+
+			if ( ! $meta_input )
+				continue;
+
+			$object_id = utils\Arr::get( $object, 'inserted.' . $lang, false );
+
+			if ( ! $object_id )
+				continue;
+
+			foreach( $meta_input as $meta_key => $meta_val ) {
+				$updated = update_term_meta( $object_id, $meta_key, $meta_val );
+
+				if ( is_numeric( $updated ) && $updated == ( int ) $updated ) {
+					$this->log[$object_id . '_' . $meta_key] = "Updated {$this->type} \$id={$object_id} added \$meta_key={$meta_key} \$meta_id={$updated}";
+				} elseif ( $updated ) {
+					$this->log[$object_id . '_' . $meta_key] = "Updated {$this->type} \$id={$object_id} updated \$meta_key={$meta_key}";
+				} else {
+					$this->log[$object_id . '_' . $meta_key] = "ERROR updating {$object_id}: couldn't add \$meta_key={$meta_key}";
+					continue;
+				}
+			}
+		}
+
 		if ( isset( $object_id ) && is_numeric( $object_id ) )
 			$this->log[$object_id . '_after'] = '';
 
