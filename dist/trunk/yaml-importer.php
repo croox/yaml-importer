@@ -3,7 +3,7 @@
 	Plugin Name: YAML Importer
 	Plugin URI: https://github.com/croox/yaml-importer
 	Description: Import Posts from YAML
-	Version: 0.0.1
+	Version: 0.0.2
 	Author: croox
 	Author URI: https://github.com/croox
 	License: GNU General Public License v2 or later
@@ -32,7 +32,7 @@ include_once( dirname( __FILE__ ) . '/vendor/autoload.php' );
 function yaim_init() {
 
 	$init_args = array(
-		'version'		=> '0.0.1',
+		'version'		=> '0.0.2',
 		'slug'			=> 'yaml-importer',
 		'name'			=> 'YAML Importer',
 		'prefix'		=> 'yaim',

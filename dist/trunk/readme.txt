@@ -30,6 +30,13 @@ Upload and install this Theme the same way you'd install any other Theme.
 
 == Changelog ==
 
+## 0.0.2 - 2019-09-23
+Taxonomy Term Import
+
+### Added
+- Taxonomy Term Import
+- Admin notices
+
 ## 0.0.1 - 2019-09-22
 Imports array of posts, supports wpml
 

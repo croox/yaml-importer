@@ -13,9 +13,7 @@ class Settings_Page {
 
 	protected $main_class;
 
-	protected $cmb_id;
-
-	protected $importer;
+	protected $cmb_id = 'yaim_options';
 
 	protected static $instance = null;
 
@@ -38,7 +36,6 @@ class Settings_Page {
 
 	public function __construct( $args ){
 		$this->main_class = $args['main_class'];
-		$this->cmb_id = 'yaim_options';
 		add_action( 'cmb2_admin_init', array( $this, 'options_page_metabox' ) );
 		add_action( 'cmb2_options-page_process_fields_' . $this->cmb_id, array( $this, 'process_fields' ), 10, 2 );
 
@@ -69,12 +66,13 @@ class Settings_Page {
 			// 'display_cb'      => false, // Override the options-page form output (CMB2_Hookup::options_page_output()).
 			// 'save_button'     => esc_html__( 'Save Theme Options', 'yaim' ), // The text for the options-page save button. Defaults to 'Save'.
 			// 'disable_settings_errors' => true, // On settings pages (not options-general.php sub-pages), allows disabling.
-			// 'message_cb'      => 'yaim_options_page_message_callback',
+			'message_cb'      => array( $this, 'message_cb' ),
 			// 'tab_group'       => '', // Tab-group identifier, enables options page tab navigation.
 			// 'tab_title'       => null, // Falls back to 'title' (above).
 			// 'autoload'        => false, // Defaults to true, the options-page option will be autloaded.
 		) );
 
+		// select the file
 		$cmb->add_field( array(
 			'name'             	=> 'Test Select',
 			'desc'             	=> 'Select a YAML file from your wp-content/yaml_importer directory.',
@@ -84,8 +82,16 @@ class Settings_Page {
 			'save_field' 		=> false,
 			'options_cb'       	=> array( $this, 'options_cb' ),
 		) );
+
+		// empty field, useful to save the log later
+		$cmb->add_field( array(
+			'id'   => 'log',
+			'type' => 'select',	// select because it will sanitize and save array
+			'render_row_cb' => array( $this, 'render_empty_field' ),
+		) );
 	}
 
+	function render_empty_field( $field_args, $field ) {}
 
 	public function options_cb( $field ) {
 		$uploads_dir_path = WP_CONTENT_DIR . '/' . call_user_func( array( $this->main_class, 'get_instance' ) )->slug;
@@ -100,17 +106,79 @@ class Settings_Page {
 
 
 	// Do some processing just before the fileds are saved
-	public function process_fields( $object_id, $cmb_id ) {
+	public function process_fields( $cmb, $cmb_id ) {
 
-		$file = utils\Arr::get( $object_id->data_to_save, 'file' );
+		$file = utils\Arr::get( $cmb->data_to_save, 'file' );
 
 		if ( empty( $file ) )
 			return;
 
-		$this->importer = new Importer( array(
-			'file' => $file,
-		) );
+		$file_data = \Spyc::YAMLLoad( $file );
+
+		// ??? validate $file_data
+
+		$cmb->data_to_save['log'] = array();
+		foreach( $file_data as $type => $objects ) {
+			switch( $type ) {
+				case 'posts':
+					$importer = new Import_Posts( $objects );
+					$cmb->data_to_save['log'] = array_merge( $cmb->data_to_save['log'], $importer->log );
+					break;
+				case 'terms':
+					$importer = new Import_Terms( $objects );
+					$cmb->data_to_save['log'] = array_merge( $cmb->data_to_save['log'], $importer->log );
+					break;
+				default:
+					$cmb->data_to_save['log'][] = "ERROR: import for {$type} not supported";
+			}
+		}
+
 	}
 
+	/**
+	 * Callback to define the optionss-saved message.
+	 *
+	 * @param CMB2  $cmb The CMB2 object.
+	 * @param array $args {
+	 *     An array of message arguments
+	 *
+	 *     @type bool   $is_options_page Whether current page is this options page.
+	 *     @type bool   $should_notify   Whether options were saved and we should be notified.
+	 *     @type bool   $is_updated      Whether options were updated with save (or stayed the same).
+	 *     @type string $setting         For add_settings_error(), Slug title of the setting to which
+	 *                                   this error applies.
+	 *     @type string $code            For add_settings_error(), Slug-name to identify the error.
+	 *                                   Used as part of 'id' attribute in HTML output.
+	 *     @type string $message         For add_settings_error(), The formatted message text to display
+	 *                                   to the user (will be shown inside styled `<div>` and `<p>` tags).
+	 *                                   Will be 'Settings updated.' if $is_updated is true, else 'Nothing to update.'
+	 *     @type string $type            For add_settings_error(), Message type, controls HTML class.
+	 *                                   Accepts 'error', 'updated', '', 'notice-warning', etc.
+	 *                                   Will be 'updated' if $is_updated is true, else 'notice-warning'.
+	 * }
+	 */
+	public function message_cb( $cmb, $args ) {
+		if ( empty( $args['should_notify'] ) )
+			return;
 
+		$log = utils\Arr::get( get_option( $this->cmb_id ), 'log', array() );
+
+		if ( ! $args['is_updated'] )
+			$log[] = '</br></br>??? maybe something went wrong</br></br>';
+
+		$log[] = 'Log saved to db $option_name=' . $this->cmb_id;
+
+		$args['message'] = implode( '</br>', array_map( function( $msg ) {
+			return is_string( $msg ) && strlen( $msg ) > 0
+				? $msg . ';'
+				: $msg;
+		}, $log ) );
+
+
+		$args['type'] = strpos( $args['message'], 'ERROR' ) !== false
+			? 'notice-warning'
+			: $args['type'];
+
+		add_settings_error( $args['setting'], $args['code'], $args['message'], $args['type'] );
+	}
 }

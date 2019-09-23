@@ -116,7 +116,9 @@ return array(
     'croox\\wde\\utils\\Post' => $vendorDir . '/croox/wp-dev-env-frame/src/utils/Post.php',
     'croox\\wde\\utils\\Post_Type' => $vendorDir . '/croox/wp-dev-env-frame/src/utils/Post_Type.php',
     'croox\\wde\\utils\\Wpml' => $vendorDir . '/croox/wp-dev-env-frame/src/utils/Wpml.php',
-    'yaim\\Importer' => $baseDir . '/classes/Importer.php',
+    'yaim\\Import_Base' => $baseDir . '/classes/Import_Base.php',
+    'yaim\\Import_Posts' => $baseDir . '/classes/Import_Posts.php',
+    'yaim\\Import_Terms' => $baseDir . '/classes/Import_Terms.php',
     'yaim\\Settings_Page' => $baseDir . '/classes/Settings_Page.php',
     'yaim\\Yaim' => $baseDir . '/classes/Yaim.php',
 );
