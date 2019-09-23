@@ -107,9 +107,24 @@ class Settings_Page {
 		if ( empty( $file ) )
 			return;
 
-		$this->importer = new Importer( array(
-			'file' => $file,
-		) );
+		$file_data = \Spyc::YAMLLoad( $file );
+
+		// ??? validate $file_data
+
+		$importer = array();
+		foreach( $file_data as $type => $objects ) {
+			switch( $type ) {
+				case 'posts':
+					$importer[] = new Import_Posts( $objects );
+					break;
+				case 'terms':
+					$importer[] = new Import_Terms( $objects );
+					break;
+				default:
+					// ??? $type not supported
+			}
+		}
+
 	}
 
 
