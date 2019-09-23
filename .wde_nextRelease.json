@@ -1,3 +1,8 @@
 {
-  "changes": []
+  "changes": [
+    {
+      "type": "fixed",
+      "message": "Multilang values for directly nested attributes. eg `meta_input`. Also works if some directly nested attributes have translations, and others not."
+    }
+  ]
 }

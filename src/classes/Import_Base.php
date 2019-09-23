@@ -28,12 +28,45 @@ abstract class Import_Base {
 
 		$this->setup_import_data( $objects );
 
+		$this->prepare_import_data();
+
 		$this->insert_objects();
 
 		return $this;
 	}
 
 	abstract protected function setup_import_data( $file_data );
+
+	protected function prepare_import_data() {
+		// classify_atts_by_validy for wp_insert_post wp_insert_term function
+		// and fix_insert_args
+		foreach( $this->objects as $object_i => $object ) {
+			if ( $object['is_wpml_import'] ) {
+				foreach( $object['atts'] as $lang => $atts ) {
+					if ( 'all' === $lang )
+						continue;
+
+					// merge atts recursive for all into current atts_by_lang
+					$atts = array_merge_recursive(
+						$atts,
+						utils\Arr::get( $this->objects, $object_i . '.atts.all', array() )
+					);
+
+					$atts = $this->classify_atts_by_validy( $atts, $object['is_wpml_import'] );
+
+					$atts = $this->fix_insert_args( $atts );
+
+					$this->objects[$object_i]['atts'][$lang] = apply_filters( "yaim_{$this->type}_atts", $atts, $lang, $object );
+				}
+			} else {
+				$atts = $this->classify_atts_by_validy( utils\Arr::get( $object, 'atts.all', array() ), $object['is_wpml_import'] );
+
+				$atts = $this->fix_insert_args( $atts );
+
+				$this->objects[$object_i]['atts']['all'] = apply_filters( "yaim_{$this->type}_atts", $atts, 'all', $object );
+			}
+		}
+	}
 
 	abstract protected function classify_atts_by_validy( $object_atts, $use_deferred = false );
 
@@ -48,8 +81,10 @@ abstract class Import_Base {
 		}
 
 		foreach( $this->objects as $i => $object ) {
-			if ( is_wp_error( $object['atts'] ) )
+			if ( is_wp_error( $object['atts'] ) ) {
+				$this->log[] = 'ERROR: ' . $object['atts']->get_error_message();
 				continue;
+			}
 			if ( $object['is_wpml_import'] ) {
 				$this->insert_object_wmpl( $i, $object );
 			} else {
@@ -87,16 +122,20 @@ abstract class Import_Base {
 		if ( null !== $default_lang )
 			$atts[$default_lang] = array();
 
+		$may_be_nested_keys = array(
+			'meta_input',
+		);
+
 		foreach( $object_raw_data as $key => $attr ) {
 			if ( is_array( $attr ) ) {
-				$keys_starts_wpml_ = array_unique( array_map( function( $k ) {
-					return substr( $k, 0, strlen( 'wpml_' ) ) === 'wpml_';
-				}, array_keys( $attr ) ) );
 
-				if ( count( $keys_starts_wpml_ ) > 1 ) // something wrong, mixed language fields
+				$is_wpml_attr = $this->is_wpml_attr( $key, array_keys( $attr ) );
+				if ( is_wp_error( $is_wpml_attr ) ) {
+					$this->log[] = 'ERROR: ' . $is_wpml_attr->get_error_message();
 					continue;
+				}
 
-				if ( $keys_starts_wpml_[0] ) {	// all keys start with wpml_
+				if ( $is_wpml_attr ) {
 					foreach( $attr as $lang => $val ) {
 						$lang = str_replace( 'wpml_', '', $lang );
 						if ( in_array( $lang, $this->active_langs ) ) {
@@ -106,11 +145,37 @@ abstract class Import_Base {
 								$atts[$lang][$key] = $val;
 							}
 						} else {
-							// something wrong, lang not active
+							$this->log[] = "ERROR: \$lang={$lang} not acive";
 						}
 					}
-				} else { // is normal field
-					$atts['all'][$key] = $attr;
+				} else {
+					foreach( $attr as $n_key => $n_attr ) {
+
+						if ( is_array( $n_attr ) ) {
+
+							$is_wpml_attr = $this->is_wpml_attr( $n_key, array_keys( $n_attr ) );
+							if ( is_wp_error( $is_wpml_attr ) ) {
+								$this->log[] = 'ERROR: ' . $is_wpml_attr->get_error_message();
+								continue;
+							}
+
+							if ( $is_wpml_attr ) {
+								foreach( $n_attr as $lang => $val ) {
+									$lang = str_replace( 'wpml_', '', $lang );
+									if ( in_array( $lang, $this->active_langs ) ) {
+										$atts[$lang][$key][$n_key] = $val;
+									} else {
+										$this->log[] = "ERROR: \$lang={$lang} not acive";
+									}
+								}
+							} else { // is normal field
+								$atts['all'][$key][$n_key] = $n_attr;
+							}
+
+						} else { // is normal field
+							$atts['all'][$key][$n_key] = $n_attr;
+						}
+					}
 				}
 
 			} else { // is normal field
@@ -118,6 +183,17 @@ abstract class Import_Base {
 			}
 		}
 		return $atts;
+	}
+
+	protected function is_wpml_attr( $key, $keys ) {
+		$keys_starts_wpml_ = array_unique( array_map( function( $k ) {
+			return substr( $k, 0, strlen( 'wpml_' ) ) === 'wpml_';
+		}, $keys ) );
+
+		if ( count( $keys_starts_wpml_ ) > 1 )
+			return new \WP_Error( 'attr_mixed_language', sprintf( __( '"%s" has translated and non-translated input.', 'yaim' ), $key ) );
+
+		return $keys_starts_wpml_[0];
 	}
 
 	/**

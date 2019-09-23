@@ -28,12 +28,8 @@ class Import_Posts extends Import_Base {
 				}
 			}
 
-			// check if is_wpml_import for this object
-			$is_wpml_import =
-			$is_wpml_import = $this->is_wpml_import( $object_raw_data );
-
 			$this->objects[$object_i] = array(
-				'is_wpml_import'	=> $is_wpml_import,
+				'is_wpml_import'	=> $this->is_wpml_import( $object_raw_data ),
 				'inserted'			=> array(),
 				'atts' 				=> $this->classify_atts_by_lang( $object_raw_data, array(
 					'post_type',
@@ -43,34 +39,6 @@ class Import_Posts extends Import_Base {
 
 		}
 
-		// classify_atts_by_validy for wp_insert_post function
-		// and fix_insert_args
-		foreach( $this->objects as $object_i => $object ) {
-			if ( $object['is_wpml_import'] ) {
-				foreach( $object['atts'] as $lang => $atts ) {
-					if ( 'all' === $lang )
-						continue;
-
-					// merge atts for all into current atts_by_lang
-					$atts = array_merge(
-						$atts,
-						utils\Arr::get( $this->objects, $object_i . '.atts.all', array() )
-					);
-
-					$atts = $this->classify_atts_by_validy( $atts, $object['is_wpml_import'] );
-
-					$atts = $this->fix_insert_args( $atts );
-
-					$this->objects[$object_i]['atts'][$lang] = apply_filters( "yaim_{$this->type}_atts", $atts, $lang, $object );	// ??? should add type as param
-				}
-			} else {
-				$atts = $this->classify_atts_by_validy( utils\Arr::get( $object, 'atts.all', array() ), $object['is_wpml_import'] );
-
-				$atts = $this->fix_insert_args( $atts );
-
-				$this->objects[$object_i]['atts']['all'] = apply_filters( "yaim_{$this->type}_atts", $atts, 'all', $object );
-			}
-		}
 	}
 
 	protected function classify_atts_by_validy( $object_atts, $use_deferred = false ) {
