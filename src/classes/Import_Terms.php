@@ -113,7 +113,7 @@ class Import_Terms extends Import_Base {
 		}
 
 		$object_trid = null;
-
+		$original_id = null;
 		foreach( $object['atts'] as $lang => $atts_by_lang ) {
 			if ( 'all' === $lang )
 				continue;
@@ -124,12 +124,20 @@ class Import_Terms extends Import_Base {
 
 			$term_tax_ids = wp_insert_term( $name, $taxonomy, $args );
 
-			if ( is_wp_error( $term_tax_ids ) )
+			if ( is_wp_error( $term_tax_ids ) ) {
+				$this->log[] = 'ERROR: ' . $term_tax_ids->get_error_message();
 				continue;
+			}
 
 			$object_id = $term_tax_ids['term_id'];
+
+			// original_id of first inserted object
+			$original_id = null === $original_id ? $object_id : $original_id;
+
 			$object['inserted'][$lang] = $object_id;
 			$this->objects[$i]['inserted'][$lang] = $object_id;
+
+			$this->log[$object_id . '_in'] = "Inserted {$this->type} \$id={$object_id}";
 
 			// object_trid of first inserted object
 			$object_trid = null === $object_trid
@@ -150,6 +158,9 @@ class Import_Terms extends Import_Base {
 				$lang
 			);
 
+			$this->log[$object_id . '_in'] .= " \$lang={$lang} \$translation_id={$translation_id}";
+			$this->log[$object_id . '_in'] .= $original_id === $object_id ? '' : " as translation for \$id={$original_id}";
+
 			do_action( "yaim_{$this->type}_wpml_language_set",
 				$object_id,
 				$this->objects[$i],
@@ -158,6 +169,9 @@ class Import_Terms extends Import_Base {
 				$translation_id
 			);
 		}
+
+		if ( isset( $object_id ) && is_numeric( $object_id ) )
+			$this->log[$object_id . '_after'] = '';
 
 		do_action( "yaim_{$this->type}_inserted", $this->objects[$i], $object_id );
 
@@ -170,11 +184,15 @@ class Import_Terms extends Import_Base {
 
 		$term_tax_ids = wp_insert_term( $name, $taxonomy, $args );
 
-		if ( is_wp_error( $term_tax_ids ) )
+		if ( is_wp_error( $term_tax_ids ) ) {
+			$this->log[] = 'ERROR: ' . $term_tax_ids->get_error_message();
 			return;
+		}
 
 		$object_id = $term_tax_ids['term_id'];
 		$this->objects[$i]['inserted']['all'] = $object_id;
+
+		$this->log[$object_id . '_in'] = "Inserted {$this->type} \$id={$object_id}";
 
 		do_action( "yaim_{$this->type}_inserted", $this->objects[$i], null );
 	}

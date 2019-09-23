@@ -3,6 +3,10 @@
     {
       "type": "added",
       "message": "Taxonomy Term Import"
+    },
+    {
+      "type": "added",
+      "message": "Admin notices"
     }
   ]
 }

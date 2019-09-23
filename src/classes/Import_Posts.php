@@ -178,17 +178,25 @@ class Import_Posts extends Import_Base {
 		}
 
 		$object_trid = null;
+		$original_id = null;
 		foreach( $object['atts'] as $lang => $atts_by_lang ) {
 			if ( 'all' === $lang )
 				continue;
 
 			$object_id = wp_insert_post( $atts_by_lang['insert_args'] );
 
-			if ( is_wp_error( $object_id ) )
+			if ( is_wp_error( $object_id ) ) {
+				$this->log[] = 'ERROR: ' . $object_id->get_error_message();
 				continue;
+			}
+
+			// original_id of first inserted object
+			$original_id = null === $original_id ? $object_id : $original_id;
 
 			$object['inserted'][$lang] = $object_id;
 			$this->objects[$i]['inserted'][$lang] = $object_id;
+
+			$this->log[$object_id . '_in'] = "Inserted {$this->type} \$id={$object_id}";
 
 			// object_trid of first inserted object
 			$object_trid = null === $object_trid
@@ -208,6 +216,9 @@ class Import_Posts extends Import_Base {
 				$object_trid,
 				$lang
 			);
+
+			$this->log[$object_id . '_in'] .= " \$lang={$lang} \$translation_id={$translation_id}";
+			$this->log[$object_id . '_in'] .= $original_id === $object_id ? '' : " as translation for \$id={$original_id}";
 
 			do_action( "yaim_{$this->type}_wpml_language_set",
 				$object_id,
@@ -237,7 +248,6 @@ class Import_Posts extends Import_Base {
 				array(
 					'ID' => $object_id,
 					'post_type' => get_post_type( $object_id ),
-					// 'post_excerpt' => $object_id,
 				),
 				$atts_by_lang['deferred_insert_args']
 			);
@@ -245,8 +255,18 @@ class Import_Posts extends Import_Base {
 			if ( ! array_key_exists( 'post_title', $args ) )
 				$args['post_title'] = utils\Arr::get( $atts_by_lang, 'insert_args.post_title' );
 
-			$object_id = wp_update_post( $args, true );
+			$updated = wp_update_post( $args, true );
+
+			if ( is_wp_error( $updated ) ) {
+				$this->log[] = "ERROR updating {$object_id}: " . $updated->get_error_message();
+				continue;
+			}
+
+			$this->log[$object_id . '_up'] = "Updated {$this->type} \$id={$object_id} \$args=[" . implode( ', ', array_keys( $atts_by_lang['deferred_insert_args'] ) ) . "] and wpml should have done the sync";
 		}
+
+		if ( isset( $object_id ) )
+			$this->log[$object_id . '_after'] = '';
 
 		do_action( "yaim_{$this->type}_inserted", $this->objects[$i], $object_id );
 
@@ -258,10 +278,14 @@ class Import_Posts extends Import_Base {
 			utils\Arr::get( $object, 'atts.all.deferred_insert_args', array() )
 		) );
 
-		if ( is_wp_error( $object_id ) )
+		if ( is_wp_error( $object_id ) ) {
+			$this->log[] = 'ERROR: ' . $object_id->get_error_message();
 			return;
+		}
 
 		$this->objects[$i]['inserted']['all'] = $object_id;
+
+		$this->log[$object_id . '_in'] = "Inserted {$this->type} \$id={$object_id}";
 
 		do_action( "yaim_{$this->type}_inserted", $this->objects[$i], null );
 	}

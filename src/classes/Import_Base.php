@@ -9,7 +9,6 @@ if ( ! defined( 'WPINC' ) ) {
 
 use croox\wde\utils;
 
-
 abstract class Import_Base {
 
 	protected $objects = array();
@@ -17,6 +16,8 @@ abstract class Import_Base {
 	protected $type = '';	// eg. post, term
 
 	protected $active_langs = array();
+
+	protected $log = array();
 
 	public function __construct( $objects ){
 
@@ -29,6 +30,7 @@ abstract class Import_Base {
 
 		$this->insert_objects();
 
+		return $this;
 	}
 
 	abstract protected function setup_import_data( $file_data );
@@ -116,6 +118,22 @@ abstract class Import_Base {
 			}
 		}
 		return $atts;
+	}
+
+	/**
+	 * Public getter method for retrieving protected/private variables
+	 * @param  string  		$field Field to retrieve
+	 * @return mixed        Field value or exception is thrown
+	 */
+	public function __get( $field ) {
+		if ( in_array( $field, array(
+			'objects',
+			'type',
+			'log',
+		), true ) ) {
+			return $this->{$field};
+		}
+		throw new Exception( 'Invalid property: ' . $field );
 	}
 
 }
