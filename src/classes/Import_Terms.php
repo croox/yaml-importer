@@ -100,7 +100,7 @@ class Import_Terms extends Import_Base {
 			$term_tax_ids = wp_insert_term( $name, $taxonomy, $args );
 
 			if ( is_wp_error( $term_tax_ids ) ) {
-				$this->log[] = 'ERROR: ' . $term_tax_ids->get_error_message();
+				$this->log->add_entry( 'ERROR: ' . $term_tax_ids->get_error_message() );
 				continue;
 			}
 
@@ -112,7 +112,7 @@ class Import_Terms extends Import_Base {
 			$object['inserted'][$lang] = $object_id;
 			$this->objects[$i]['inserted'][$lang] = $object_id;
 
-			$this->log[$object_id . '_in'] = "Inserted {$this->type} \$id={$object_id}";
+			$this->log->add_entry( "Inserted {$this->type} \$id={$object_id}", $object_id . '_in' );
 
 			// object_trid of first inserted object
 			$object_trid = null === $object_trid
@@ -133,8 +133,8 @@ class Import_Terms extends Import_Base {
 				$lang
 			);
 
-			$this->log[$object_id . '_in'] .= " \$lang={$lang} \$translation_id={$translation_id}";
-			$this->log[$object_id . '_in'] .= $original_id === $object_id ? '' : " as translation for \$id={$original_id}";
+			$this->log->add_entry( " \$lang={$lang} \$translation_id={$translation_id}", $object_id . '_in' );
+			$this->log->add_entry( $original_id === $object_id ? '' : " as translation for \$id={$original_id}", $object_id . '_in' );
 
 			do_action( "yaim_{$this->type}_wpml_language_set",
 				$object_id,
@@ -164,20 +164,19 @@ class Import_Terms extends Import_Base {
 				$updated = update_term_meta( $object_id, $meta_key, $meta_val );
 
 				if ( is_numeric( $updated ) && $updated == ( int ) $updated ) {
-					$this->log[$object_id . '_' . $meta_key] = "Updated {$this->type} \$id={$object_id} added \$meta_key={$meta_key} \$meta_id={$updated}";
+					$this->log->add_entry( "Updated {$this->type} \$id={$object_id} added \$meta_key={$meta_key} \$meta_id={$updated}", $object_id . '_' . $meta_key );
+
 				} elseif ( $updated ) {
-					$this->log[$object_id . '_' . $meta_key] = "Updated {$this->type} \$id={$object_id} updated \$meta_key={$meta_key}";
+					$this->log->add_entry( "Updated {$this->type} \$id={$object_id} updated \$meta_key={$meta_key}", $object_id . '_' . $meta_key );
 				} else {
-					$this->log[$object_id . '_' . $meta_key] = "ERROR updating {$object_id}: couldn't add \$meta_key={$meta_key}";
+					$this->log->add_entry( "ERROR updating {$object_id}: couldn't add \$meta_key={$meta_key}", $object_id . '_' . $meta_key );
 					continue;
 				}
 			}
 		}
 
-		if ( isset( $object_id ) && is_numeric( $object_id ) )
-			$this->log[$object_id . '_after'] = '';
-
-		do_action( "yaim_{$this->type}_inserted", $this->objects[$i], $object_id );
+		if ( isset( $object_id ) )
+			do_action( "yaim_{$this->type}_inserted", $this->objects[$i], $object_id );
 
 	}
 
@@ -189,15 +188,14 @@ class Import_Terms extends Import_Base {
 		$term_tax_ids = wp_insert_term( $name, $taxonomy, $args );
 
 		if ( is_wp_error( $term_tax_ids ) ) {
-			$this->log[] = 'ERROR: ' . $term_tax_ids->get_error_message();
+			$this->log->add_entry( 'ERROR: ' . $term_tax_ids->get_error_message();
 			return;
 		}
 
 		$object_id = $term_tax_ids['term_id'];
 		$this->objects[$i]['inserted']['all'] = $object_id;
 
-		$this->log[$object_id . '_in'] = "Inserted {$this->type} \$id={$object_id}";
-
+		$this->log->add_entry( "Inserted {$this->type} \$id={$object_id}", $object_id . '_in' );
 		do_action( "yaim_{$this->type}_inserted", $this->objects[$i], null );
 	}
 

@@ -19,14 +19,16 @@ abstract class Import_Base {
 
 	protected $autop_keys = array();
 
-	protected $log = array();
+	protected $log;
 
-	public function __construct( $objects ){
+	public function __construct( $objects, $log ){
 
 		$this->active_langs = apply_filters( 'wpml_active_languages', null, array( 'skip_missing' => 0 ) );
 		$this->active_langs = null === $this->active_langs ? $this->active_langs : array_map( function( $lang ) {
 			return $lang['language_code'];
 		}, $this->active_langs );
+
+		$this->log = $log;
 
 		$this->setup_import_data( $objects );
 
@@ -84,7 +86,7 @@ abstract class Import_Base {
 
 		foreach( $this->objects as $i => $object ) {
 			if ( is_wp_error( $object['atts'] ) ) {
-				$this->log[] = 'ERROR: ' . $object['atts']->get_error_message();
+				$this->log->add_entry( 'ERROR: ' . $object['atts']->get_error_message() );
 				continue;
 			}
 			if ( $object['is_wpml_import'] ) {
@@ -92,6 +94,7 @@ abstract class Import_Base {
 			} else {
 				$this->insert_object( $i, $object );
 			}
+			$this->log->save();
 		}
 
 		if ( class_exists( 'SitePress' ) ) {
@@ -129,7 +132,7 @@ abstract class Import_Base {
 
 				$is_wpml_attr = $this->is_wpml_attr( $key, array_keys( $attr ) );
 				if ( is_wp_error( $is_wpml_attr ) ) {
-					$this->log[] = 'ERROR: ' . $is_wpml_attr->get_error_message();
+					$this->log->add_entry( 'ERROR: ' . $is_wpml_attr->get_error_message() );
 					continue;
 				}
 
@@ -143,7 +146,7 @@ abstract class Import_Base {
 								$atts[$lang][$key] = $this->maybe_autop( $key, $val );
 							}
 						} else {
-							$this->log[] = "ERROR: \$lang={$lang} not acive";
+							$this->log->add_entry( "ERROR: \$lang={$lang} not acive" );
 						}
 					}
 				} else {
@@ -153,7 +156,7 @@ abstract class Import_Base {
 
 							$is_wpml_attr = $this->is_wpml_attr( $n_key, array_keys( $n_attr ) );
 							if ( is_wp_error( $is_wpml_attr ) ) {
-								$this->log[] = 'ERROR: ' . $is_wpml_attr->get_error_message();
+								$this->log->add_entry( 'ERROR: ' . $is_wpml_attr->get_error_message() );
 								continue;
 							}
 
@@ -163,7 +166,7 @@ abstract class Import_Base {
 									if ( in_array( $lang, $this->active_langs ) ) {
 										$atts[$lang][$key][$n_key] = $this->maybe_autop( $n_key, $val );
 									} else {
-										$this->log[] = "ERROR: \$lang={$lang} not acive";
+										$this->log->add_entry( "ERROR: \$lang={$lang} not acive" );
 									}
 								}
 							} else { // is normal field

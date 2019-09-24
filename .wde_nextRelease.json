@@ -15,6 +15,10 @@
     {
       "type": "added",
       "message": "Handle p2p connections for post import"
+    },
+    {
+      "type": "changed",
+      "message": "More stable log"
     }
   ]
 }

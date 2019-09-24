@@ -83,12 +83,6 @@ class Settings_Page {
 			'options_cb'       	=> array( $this, 'options_cb' ),
 		) );
 
-		// empty field, useful to save the log later
-		$cmb->add_field( array(
-			'id'   => 'log',
-			'type' => 'select',	// select because it will sanitize and save array
-			'render_row_cb' => array( $this, 'render_empty_field' ),
-		) );
 	}
 
 	function render_empty_field( $field_args, $field ) {}
@@ -107,6 +101,7 @@ class Settings_Page {
 
 	// Do some processing just before the fileds are saved
 	public function process_fields( $cmb, $cmb_id ) {
+		$this->log = new Log();
 
 		$file = utils\Arr::get( $cmb->data_to_save, 'file' );
 
@@ -121,15 +116,13 @@ class Settings_Page {
 		foreach( $file_data as $type => $objects ) {
 			switch( $type ) {
 				case 'posts':
-					$importer = new Import_Posts( $objects );
-					$cmb->data_to_save['log'] = array_merge( $cmb->data_to_save['log'], $importer->log );
+					$importer = new Import_Posts( $objects, $this->log );
 					break;
 				case 'terms':
-					$importer = new Import_Terms( $objects );
-					$cmb->data_to_save['log'] = array_merge( $cmb->data_to_save['log'], $importer->log );
+					$importer = new Import_Terms( $objects, $this->log );
 					break;
 				default:
-					$cmb->data_to_save['log'][] = "ERROR: import for {$type} not supported";
+					$this->log->add_entry( "ERROR: import for {$type} not supported" );
 			}
 		}
 
@@ -161,23 +154,17 @@ class Settings_Page {
 		if ( empty( $args['should_notify'] ) )
 			return;
 
-		$log = utils\Arr::get( get_option( $this->cmb_id ), 'log', array() );
+		$log = Log::get_from_db();
 
-		if ( ! $args['is_updated'] )
-			$log[] = '</br></br>??? maybe something went wrong</br></br>';
-
-		$log[] = 'Log saved to db $option_name=' . $this->cmb_id;
-
-		$args['message'] = implode( '</br>', array_map( function( $msg ) {
-			return is_string( $msg ) && strlen( $msg ) > 0
-				? $msg . ';'
-				: $msg;
-		}, $log ) );
-
-
-		$args['type'] = strpos( $args['message'], 'ERROR' ) !== false
-			? 'notice-warning'
-			: $args['type'];
+		if ( $log['last_log_saved'] ) {
+			$args['message'] = implode( '</br>', $log['msgs'] );
+			$args['type'] = strpos( $args['message'], 'ERROR' ) !== false
+				? 'notice-warning'
+				: 'updated';
+		} else {
+			$args['message'] = 'Something went wrong and no log saved';
+			$args['type'] = 'error';
+		}
 
 		add_settings_error( $args['setting'], $args['code'], $args['message'], $args['type'] );
 	}
