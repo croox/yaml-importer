@@ -203,7 +203,39 @@ class Import_Posts extends Import_Base {
 
 		}
 
-		// do the deferred stuff
+		$this->update_object_deferred( $i, $object );
+
+		$this->update_object_p2p( $i, $object );
+
+		if ( isset( $object_id ) )
+			$this->log[$object_id . '_after'] = '';
+
+		do_action( "yaim_{$this->type}_inserted", $this->objects[$i], $object_id );
+
+	}
+
+	protected function insert_object( $i, $object ) {
+		$object_id = wp_insert_post( array_merge(
+			utils\Arr::get( $object, 'atts.all.insert_args', array() ),
+			utils\Arr::get( $object, 'atts.all.deferred_insert_args', array() )
+		) );
+
+		if ( is_wp_error( $object_id ) ) {
+			$this->log[] = 'ERROR: ' . $object_id->get_error_message();
+			return;
+		}
+
+		$this->objects[$i]['inserted']['all'] = $object_id;
+
+		$this->update_object_p2p( $i, $object );
+
+		$this->log[$object_id . '_in'] = "Inserted {$this->type} \$id={$object_id}";
+
+		do_action( "yaim_{$this->type}_inserted", $this->objects[$i], $object_id );
+	}
+
+	protected function update_object_deferred( $i, $object ) {
+
 		foreach( $object['atts'] as $lang => $atts_by_lang ) {
 			if ( 'all' === $lang )
 				continue;
@@ -237,30 +269,101 @@ class Import_Posts extends Import_Base {
 
 			$this->log[$object_id . '_up'] = "Updated {$this->type} \$id={$object_id} \$args=[" . implode( ', ', array_keys( $atts_by_lang['deferred_insert_args'] ) ) . "] and wpml should have done the sync";
 		}
-
-		if ( isset( $object_id ) )
-			$this->log[$object_id . '_after'] = '';
-
-		do_action( "yaim_{$this->type}_inserted", $this->objects[$i], $object_id );
-
 	}
 
-	protected function insert_object( $i, $object ) {
-		$object_id = wp_insert_post( array_merge(
-			utils\Arr::get( $object, 'atts.all.insert_args', array() ),
-			utils\Arr::get( $object, 'atts.all.deferred_insert_args', array() )
-		) );
+	protected function update_object_p2p( $i, $object ) {
+		if ( class_exists( 'P2P_Connection_Type_Factory' ) ) {
+			foreach( $object['atts'] as $lang => $atts_by_lang ) {
+				if ( 'all' === $lang )
+					continue;
 
-		if ( is_wp_error( $object_id ) ) {
-			$this->log[] = 'ERROR: ' . $object_id->get_error_message();
-			return;
+				$p2p = utils\Arr::get( $atts_by_lang,'custom_args.p2p' );
+
+				if ( ! $p2p )
+					continue;
+
+				$object_id = utils\Arr::get( $object, 'inserted.' . $lang, false );
+
+				if ( ! $object_id )
+					continue;
+
+				foreach( $p2p as $ctype_name => $conns ) {
+
+					$ctype = \P2P_Connection_Type_Factory::get_instance( $ctype_name );
+
+					$object_side = false;
+					$object_post_type = get_post_type( $object_id );
+					$both_sides_are_posttype = true;
+					$conn_post_type = false;
+					foreach( $ctype->side as $direction => $side ) {
+						if ( ! $side instanceof \P2P_Side_Post ) {
+							$both_sides_are_posttype = false;
+							continue;
+						}
+						if ( in_array( $object_post_type, utils\Arr::get( $side->query_vars, 'post_type' ) ) ) {
+							$object_side = ! $object_side
+								? $direction
+								: $object_side;
+						} else {
+							$conn_post_type = ! $conn_post_type
+								? utils\Arr::get( $side->query_vars, 'post_type.0' )
+								: $conn_post_type;
+						}
+					}
+
+					if ( ! $both_sides_are_posttype ) {
+						$this->log[] = "WARNING updating {$object_id}: currently p2p connections are only supported, if both connection sides represent a posttype";
+						continue;
+					}
+
+					if ( ! $object_side ) {
+						$this->log[] = "ERROR updating {$object_id}: No side of \$connection_type={$ctype_name} represents \$posttype={$object_post_type} ";
+						continue;
+					}
+
+					$connected_post_ids = array();
+					foreach( $conns as $conn_k => $conn_v ) {
+
+						$conn_post_slug = is_array( $conn_v ) || ( is_string( $conn_v ) && empty( $conn_v ) )
+							? $conn_k
+							: $conn_v;
+
+						$get_post_args = array(
+							'name'           => $conn_post_slug,
+							'posts_per_page' => 1,
+							'post_type'      => $conn_post_type,
+							'fields'      	 => 'ids',
+						);
+						$get_post_args = class_exists( 'SitePress' ) ? array_merge( $get_post_args, array(
+							'lang' => apply_filters( 'wpml_current_language', null ),
+							'suppress_filters'  => false,
+						) ) : $get_post_args;
+
+						$conn_post_id = utils\Arr::get( get_posts( $get_post_args ), '0', false );
+
+						if ( ! $conn_post_id ) {
+							$this->log[] = "WARNING updating {$object_id}: can't create p2p connection, can't find post with \$slug={$conn_post_slug}";
+							continue;
+						}
+
+						// create connection
+						$p2p_id = $ctype->connect(
+							'from' === $object_side ? $object_id : $conn_post_id,
+							'to' === $object_side ? $object_id : $conn_post_id,
+							is_array( $conn_v ) ? $conn_v : array()
+						);
+
+						if ( is_wp_error( $p2p_id ) ) {
+							$this->log[] = 'ERROR: ' . $p2p_id->get_error_message();
+							continue;
+						}
+						$connected_post_ids[] = $conn_post_id;
+					}
+
+					$this->log[$object_id . '_p2p_' . $conn_post_id] = "Updated {$this->type} \$id={$object_id} p2p connected with post \$ids=[" . implode( ', ', $connected_post_ids ) . "] \$ctype_name={$ctype_name}";
+				}
+			}
 		}
-
-		$this->objects[$i]['inserted']['all'] = $object_id;
-
-		$this->log[$object_id . '_in'] = "Inserted {$this->type} \$id={$object_id}";
-
-		do_action( "yaim_{$this->type}_inserted", $this->objects[$i], null );
 	}
 
 }

@@ -11,6 +11,10 @@
     {
       "type": "added",
       "message": "Use `wpautop`for certain fields. Fields are filtered by \"yaim_{$this->type}_autop_keys\" filter"
+    },
+    {
+      "type": "added",
+      "message": "Handle p2p connections for post import"
     }
   ]
 }
