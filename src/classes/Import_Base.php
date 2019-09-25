@@ -17,21 +17,39 @@ abstract class Import_Base extends \WP_Background_Process {
 
 	protected static $autop_keys = array();
 
-	protected $log;
+	protected $uploads_dir_path;
 
 	// public function __construct(){
 	// 	parent::__construct();
 	// }
 
-	public function add_logger( $log ) {
-		$this->log = $log;
+	protected static function log( $msg = '' ) {
+		$path = WP_CONTENT_DIR . '/yaml-importer/import.log';
+		error_log(
+			sprintf( '[%s] %s %s', date('d-M-Y H:i:s T'), $msg, PHP_EOL ),
+			3,
+			$path
+		);
 	}
 
 	protected function task( $object_raw_data ) {
 
+		static::log( '' );
+		static::log( implode( ' ', array(
+			'Start' . "\t",
+			static::$type,
+			'import',
+		) ) );
+
 		$object = static::setup_import_data( $object_raw_data );
 
 		$object = static::prepare_import_data( $object );
+
+		static::log( implode( ' ', array(
+			'Prepared' . "\t",
+			static::$type,
+			'data',
+		) ) );
 
 		if ( class_exists( 'SitePress' ) ) {
 			$current_lang = apply_filters( 'wpml_current_language', null );
@@ -47,15 +65,18 @@ abstract class Import_Base extends \WP_Background_Process {
 			}
 
 		} else {
-			// $this->log->add_entry( 'ERROR: ' . $object['atts']->get_error_message() );
+			static::log( implode( ' ', array(
+				'ERROR',
+				$object['atts']->get_error_message()
+			) ) );
 		}
-
-		// $this->log->add_entry( 'done' );
-		// $this->log->save();
 
 		if ( class_exists( 'SitePress' ) ) {
 			do_action( 'wpml_switch_language', $current_lang, null );
 		}
+
+		static::log( 'Done' );
+		static::log( '' );
 
 		return false;
 	}
@@ -129,7 +150,7 @@ abstract class Import_Base extends \WP_Background_Process {
 
 				$is_wpml_attr = static::is_wpml_attr( $key, array_keys( $attr ) );
 				if ( is_wp_error( $is_wpml_attr ) ) {
-					// $this->log->add_entry( 'ERROR: ' . $is_wpml_attr->get_error_message() );
+					static::log( 'ERROR: ' . $is_wpml_attr->get_error_message() );
 					continue;
 				}
 
@@ -143,7 +164,7 @@ abstract class Import_Base extends \WP_Background_Process {
 								$atts[$lang][$key] = static::maybe_autop( $key, $val );
 							}
 						} else {
-							// $this->log->add_entry( "ERROR: \$lang={$lang} not acive" );
+							static::log( "ERROR: \$lang={$lang} not acive" );
 						}
 					}
 				} else {
@@ -153,7 +174,7 @@ abstract class Import_Base extends \WP_Background_Process {
 
 							$is_wpml_attr = static::is_wpml_attr( $n_key, array_keys( $n_attr ) );
 							if ( is_wp_error( $is_wpml_attr ) ) {
-								// $this->log->add_entry( 'ERROR: ' . $is_wpml_attr->get_error_message() );
+								static::log( 'ERROR: ' . $is_wpml_attr->get_error_message() );
 								continue;
 							}
 
@@ -163,7 +184,7 @@ abstract class Import_Base extends \WP_Background_Process {
 									if ( in_array( $lang, static::get_active_langs() ) ) {
 										$atts[$lang][$key][$n_key] = static::maybe_autop( $n_key, $val );
 									} else {
-										// $this->log->add_entry( "ERROR: \$lang={$lang} not acive" );
+										static::log( "ERROR: \$lang={$lang} not acive" );
 									}
 								}
 							} else { // is normal field

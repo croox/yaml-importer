@@ -13,6 +13,8 @@ class Settings_Page {
 
 	protected $main_class;
 
+	protected $uploads_dir_path;
+
 	protected $cmb_id = 'yaim_options';
 
 	protected $import_posts;
@@ -28,33 +30,32 @@ class Settings_Page {
 
 	protected static $instance = null;
 
-	public static function get_instance( $args = array() ) {
+	public static function get_instance() {
 		if ( null === self::$instance ) {
-			$required_args = array(
-				'main_class',
-			);
-			foreach( $required_args as $required_arg ) {
-				if ( ! array_key_exists( $required_arg, $args ) || empty( $args[$required_arg] ) ) {
-					error_log( __FILE__ );
-					return new \WP_Error( 'missing_arg',  sprintf( __( 'Argument "%s" missing', 'yaim' ), $required_arg ) );
-				}
-			}
-			self::$instance = new self( $args );
+			// $required_args = array(
+			// 	'main_class',
+			// );
+			// foreach( $required_args as $required_arg ) {
+			// 	if ( ! array_key_exists( $required_arg, $args ) || empty( $args[$required_arg] ) ) {
+			// 		error_log( __FILE__ );
+			// 		return new \WP_Error( 'missing_arg',  sprintf( __( 'Argument "%s" missing', 'yaim' ), $required_arg ) );
+			// 	}
+			// }
+			self::$instance = new self();
 		}
 		return self::$instance;
 	}
 
 
-	public function __construct( $args ){
-		$this->main_class = $args['main_class'];
+	public function __construct(){
+		// $this->main_class = $args['main_class'];
+		// $this->uploads_dir_path = WP_CONTENT_DIR . '/' . call_user_func( array( $this->main_class, 'get_instance' ) )->slug;
 		add_action( 'cmb2_admin_init', array( $this, 'options_page_metabox' ) );
 		add_action( 'cmb2_options-page_process_fields_' . $this->cmb_id, array( $this, 'process_fields' ), 10, 2 );
 		add_action( 'init', array( $this, 'init_importers' ) );
 	}
 
 	public function init_importers() {
-
-
 		foreach( $this->suported_types as $type ) {
 			$importer = 'import_' . $type;
 			$importer_class = __NAMESPACE__ . '\Import_' . ucfirst( $type );
@@ -111,14 +112,11 @@ class Settings_Page {
 	function render_empty_field( $field_args, $field ) {}
 
 	public function options_cb( $field ) {
-		$uploads_dir_path = WP_CONTENT_DIR . '/' . call_user_func( array( $this->main_class, 'get_instance' ) )->slug;
-
-		$files = glob( $uploads_dir_path . '/*');
-
-		$labels = array_map( function( $file ) use ( $uploads_dir_path ) {
-			return str_replace( $uploads_dir_path . '/', '', $file );
+		$path = WP_CONTENT_DIR . '/yaml-importer/';
+		$files = glob( $path .'*.yaml');
+		$labels = array_map( function( $file ) use ( $path ) {
+			return str_replace( $path, '', $file );
 		}, $files );
-
 		return array_combine( $files, $labels );
 	}
 
@@ -126,9 +124,9 @@ class Settings_Page {
 	// Do some processing just before the fileds are saved
 	public function process_fields( $cmb, $cmb_id ) {
 
-
 		$admin_message_log = new Admin_Message_Log();
 
+		$admin_message_log->add_entry( 'Start Import' );
 
 		$file = utils\Arr::get( $cmb->data_to_save, 'file' );
 
@@ -139,7 +137,7 @@ class Settings_Page {
 
 		// ??? validate $file_data
 
-		foreach( $file_data as $type => $objects ) {
+		foreach( $file_data as $type => $items ) {
 			if( ! in_array( $type, $this->suported_types ) ) {
 				$admin_message_log->add_entry( "ERROR: import for {$type} not supported" );
 				continue;
@@ -147,14 +145,16 @@ class Settings_Page {
 
 			$importer = 'import_' . $type;
 
-			$this->$importer->add_logger( $this->log );
-
-			foreach( $objects as $object_raw_data ) {
-				$this->$importer->push_to_queue( $object_raw_data );
+			foreach( $items as $item_raw_data ) {
+				$this->$importer->push_to_queue( $item_raw_data );
 			}
 			$this->$importer->save()->dispatch();
 
+			$admin_message_log->add_entry( 'All ' . count( $items ) . ' ' . $type . ' queued for import' );
 		}
+
+		$log_path = WP_CONTENT_DIR . '/yaml-importer/import.log';
+		$admin_message_log->add_entry( 'Start import in background, check the import.log ' . $log_path );
 
 		$admin_message_log->save();
 	}
@@ -187,13 +187,15 @@ class Settings_Page {
 
 		$admin_message_log = Admin_Message_Log::get_from_db();
 
+		$log_path = WP_CONTENT_DIR . '/yaml-importer/import.log';
+
 		if ( $admin_message_log['last_log_saved'] ) {
 			$args['message'] = implode( '</br>', $admin_message_log['msgs'] );
 			$args['type'] = strpos( $args['message'], 'ERROR' ) !== false
 				? 'notice-warning'
 				: 'updated';
 		} else {
-			$args['message'] = 'Something went wrong and no log saved';
+			$args['message'] = 'Something went wrong';
 			$args['type'] = 'error';
 		}
 

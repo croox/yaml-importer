@@ -14,12 +14,15 @@ class Import_Posts extends Import_Base {
 
 	protected $action = 'import_posts_process';
 
+
 	protected static $type = 'post';
 
 	protected static  $autop_keys = array(
 		'post_content',
 		'post_excerpt',
 	);
+
+
 
 	protected static function setup_import_data( $object_raw_data ) {
 
@@ -157,7 +160,12 @@ class Import_Posts extends Import_Base {
 			$object_id = wp_insert_post( $atts_by_lang['insert_args'] );
 
 			if ( is_wp_error( $object_id ) ) {
-				// // $this->log->add_entry( 'ERROR: ' . $object_id->get_error_message() );
+				static::log( implode( ' ', array(
+					'ERROR' . "\t",
+					'inserting',
+					static::$type,
+					$object_id->get_error_message()
+				) ) );
 				continue;
 			}
 
@@ -165,9 +173,12 @@ class Import_Posts extends Import_Base {
 			$original_id = null === $original_id ? $object_id : $original_id;
 
 			$object['inserted'][$lang] = $object_id;
-			$object['inserted'][$lang] = $object_id;
 
-			// // $this->log->add_entry( "Inserted " . static::$type . " \$id={$object_id}", $object_id . '_in' );
+			static::log( implode( ' ', array(
+				'Inserted' . "\t",
+				static::$type,
+				'$id=' . $object_id,
+			) ) );
 
 			// object_trid of first inserted object
 			$object_trid = null === $object_trid
@@ -188,8 +199,14 @@ class Import_Posts extends Import_Base {
 				$lang
 			);
 
-			// // $this->log->add_entry( " \$lang={$lang} \$translation_id={$translation_id}", $object_id . '_in' );
-			// // $this->log->add_entry( $original_id === $object_id ? '' : " as translation for \$id={$original_id}", $object_id . '_in' );
+			static::log( implode( ' ', array(
+				'Updated' . "\t",
+				static::$type,
+				'$id=' . $object_id,
+				'$lang=' . $lang,
+				'$translation_id=' . $translation_id,
+				$original_id === $object_id ? '' : 'as translation for $id=' . $original_id,
+			) ) );
 
 			// do_action( "yaim_" . static::$type . "_wpml_language_set",
 			// 	$object_id,
@@ -207,7 +224,7 @@ class Import_Posts extends Import_Base {
 		$object = $this->update_object_p2p( $object );
 
 		// if ( isset( $object_id ) )
-		// 	do_action( "yaim_" . static::$type . "_inserted", $object, $object_id, $this->log );		// ??? needs $i
+		// 	do_action( "yaim_" . static::$type . "_inserted", $object, $object_id );		// ??? needs $i
 
 		return $object;
 	}
@@ -219,7 +236,12 @@ class Import_Posts extends Import_Base {
 		) );
 
 		if ( is_wp_error( $object_id ) ) {
-			// $this->log->add_entry( 'ERROR: ' . $object_id->get_error_message() );
+			static::log( implode( ' ', array(
+				'ERROR' . "\t",
+				'inserting',
+				static::$type,
+				$object_id->get_error_message()
+			) ) );
 			return;
 		}
 
@@ -227,9 +249,13 @@ class Import_Posts extends Import_Base {
 
 		$this->update_object_p2p( $object );
 
-		// $this->log->add_entry( "Inserted " . static::$type . " \$id={$object_id}", $object_id . '_in' );
+		static::log( implode( ' ', array(
+			'Inserted' . "\t",
+			static::$type,
+			'$id=' . $object_id,
+		) ) );
 
-		do_action( "yaim_" . static::$type . "_inserted", $object, $object_id, $this->log );
+		// do_action( "yaim_" . static::$type . "_inserted", $object, $object_id );
 	}
 
 	protected function update_object_deferred( $object ) {
@@ -261,11 +287,25 @@ class Import_Posts extends Import_Base {
 			$updated = wp_update_post( $args, true );
 
 			if ( is_wp_error( $updated ) ) {
-				// // $this->log->add_entry( "ERROR updating {$object_id}: " . $updated->get_error_message() );
+				static::log( implode( ' ', array(
+					'WARNING' . "\t",
+					'updating',
+					'$id=' . $object_id,
+					static::$type,
+					$updated->get_error_message(),
+				) ) );
 				continue;
 			}
 
-			// // $this->log->add_entry( "Updated " . static::$type . " \$id={$object_id} \$args=[" . implode( ', ', array_keys( $atts_by_lang['deferred_insert_args'] ) ) . "] and wpml should have done the sync", $object_id . '_up' );
+			static::log( implode( ' ', array(
+				'Updated' . "\t",
+				static::$type,
+				'$id=' . $object_id,
+				'$args=[' . implode( ', ', array_keys( $atts_by_lang['deferred_insert_args'] ) ) . ']',
+				'and wpml should have done the sync',
+			) ) );
+
+
 		}
 
 		return $object;
@@ -312,12 +352,22 @@ class Import_Posts extends Import_Base {
 					}
 
 					if ( ! $both_sides_are_posttype ) {
-						// $this->log->add_entry( "WARNING updating {$object_id}: currently p2p connections are only supported, if both connection sides represent a posttype" );
+						static::log( implode( ' ', array(
+							'WARNING' . "\t",
+							'updating',
+							static::$type,
+							'Currently p2p connections are only supported, if both connection sides represent a posttype',
+						) ) );
 						continue;
 					}
 
 					if ( ! $object_side ) {
-						// $this->log->add_entry( "ERROR updating {$object_id}: No side of \$connection_type={$ctype_name} represents \$posttype={$object_post_type} " );
+						static::log( implode( ' ', array(
+							'WARNING' . "\t",
+							'updating',
+							static::$type,
+							'No side of $connection_type=' . $ctype_name . ' represents $posttype=' . $object_post_type,
+						) ) );
 						continue;
 					}
 
@@ -342,7 +392,13 @@ class Import_Posts extends Import_Base {
 						$conn_post_id = utils\Arr::get( get_posts( $get_post_args ), '0', false );
 
 						if ( ! $conn_post_id ) {
-							// $this->log->add_entry( "WARNING updating {$object_id}: can't create p2p connection, can't find post with \$slug={$conn_post_slug}" );
+							static::log( implode( ' ', array(
+								'ERROR' . "\t",
+								'updating',
+								static::$type,
+								'$id=' . $object_id,
+								'can not create p2p connection, can not find post with $slug=' . $conn_post_slug,
+							) ) );
 							continue;
 						}
 
@@ -354,13 +410,25 @@ class Import_Posts extends Import_Base {
 						);
 
 						if ( is_wp_error( $p2p_id ) ) {
-							// $this->log->add_entry( 'ERROR: ' . $p2p_id->get_error_message() );
+							static::log( implode( ' ', array(
+								'ERROR' . "\t",
+								'creating p2p connection',
+								static::$type,
+								'$id=' . $object_id,
+								$object_id->get_error_message()
+							) ) );
 							continue;
 						}
 						$connected_post_ids[] = $conn_post_id;
 					}
 
-					// $this->log->add_entry( "Updated " . static::$type . " \$id={$object_id} p2p connected with post \$ids=[" . implode( ', ', $connected_post_ids ) . "] \$ctype_name={$ctype_name}", $object_id . '_p2p_' . $conn_post_id );
+					static::log( implode( ' ', array(
+						'Updated' . "\t",
+						static::$type,
+						'$id=' . $object_id,
+						'p2p connected with post $ids=[' . implode( ', ', $connected_post_ids ) . ']',
+						'$ctype_name=' . $ctype_name,
+					) ) );
 				}
 			}
 		}
