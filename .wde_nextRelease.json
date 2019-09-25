@@ -19,6 +19,10 @@
     {
       "type": "changed",
       "message": "More stable log"
+    },
+    {
+      "type": "added",
+      "message": "a5hleyrich/wp-background-processing"
     }
   ]
 }
