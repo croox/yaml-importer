@@ -9,7 +9,7 @@ if ( ! defined( 'WPINC' ) ) {
 
 use croox\wde\utils;
 
-class Log {
+class Admin_Message_Log {
 
 	protected $msgs = array();
 

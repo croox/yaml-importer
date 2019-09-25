@@ -15,6 +15,17 @@ class Settings_Page {
 
 	protected $cmb_id = 'yaim_options';
 
+	protected $import_posts;
+	protected $import_terms;
+
+	protected $suported_types = array(
+		'posts',
+		// 'terms',
+	);
+
+
+	protected $log;
+
 	protected static $instance = null;
 
 	public static function get_instance( $args = array() ) {
@@ -38,8 +49,20 @@ class Settings_Page {
 		$this->main_class = $args['main_class'];
 		add_action( 'cmb2_admin_init', array( $this, 'options_page_metabox' ) );
 		add_action( 'cmb2_options-page_process_fields_' . $this->cmb_id, array( $this, 'process_fields' ), 10, 2 );
+		add_action( 'init', array( $this, 'init_importers' ) );
+	}
+
+	public function init_importers() {
+
+
+		foreach( $this->suported_types as $type ) {
+			$importer = 'import_' . $type;
+			$importer_class = __NAMESPACE__ . '\Import_' . ucfirst( $type );
+			$this->$importer = new $importer_class();
+		}
 
 	}
+
 
 	public function options_page_metabox() {
 
@@ -64,7 +87,7 @@ class Settings_Page {
 			// 'position'        => 1, // Menu position. Only applicable if 'parent_slug' is left empty.
 			// 'admin_menu_hook' => 'network_admin_menu', // 'network_admin_menu' to add network-level options page.
 			// 'display_cb'      => false, // Override the options-page form output (CMB2_Hookup::options_page_output()).
-			// 'save_button'     => esc_html__( 'Save Theme Options', 'yaim' ), // The text for the options-page save button. Defaults to 'Save'.
+			'save_button'     => esc_html__( 'Start Import', 'yaim' ), // The text for the options-page save button. Defaults to 'Save'.
 			// 'disable_settings_errors' => true, // On settings pages (not options-general.php sub-pages), allows disabling.
 			'message_cb'      => array( $this, 'message_cb' ),
 			// 'tab_group'       => '', // Tab-group identifier, enables options page tab navigation.
@@ -89,6 +112,7 @@ class Settings_Page {
 
 	public function options_cb( $field ) {
 		$uploads_dir_path = WP_CONTENT_DIR . '/' . call_user_func( array( $this->main_class, 'get_instance' ) )->slug;
+
 		$files = glob( $uploads_dir_path . '/*');
 
 		$labels = array_map( function( $file ) use ( $uploads_dir_path ) {
@@ -101,7 +125,10 @@ class Settings_Page {
 
 	// Do some processing just before the fileds are saved
 	public function process_fields( $cmb, $cmb_id ) {
-		$this->log = new Log();
+
+
+		$admin_message_log = new Admin_Message_Log();
+
 
 		$file = utils\Arr::get( $cmb->data_to_save, 'file' );
 
@@ -112,20 +139,24 @@ class Settings_Page {
 
 		// ??? validate $file_data
 
-		$cmb->data_to_save['log'] = array();
 		foreach( $file_data as $type => $objects ) {
-			switch( $type ) {
-				case 'posts':
-					$importer = new Import_Posts( $objects, $this->log );
-					break;
-				case 'terms':
-					$importer = new Import_Terms( $objects, $this->log );
-					break;
-				default:
-					$this->log->add_entry( "ERROR: import for {$type} not supported" );
+			if( ! in_array( $type, $this->suported_types ) ) {
+				$admin_message_log->add_entry( "ERROR: import for {$type} not supported" );
+				continue;
 			}
+
+			$importer = 'import_' . $type;
+
+			$this->$importer->add_logger( $this->log );
+
+			foreach( $objects as $object_raw_data ) {
+				$this->$importer->push_to_queue( $object_raw_data );
+			}
+			$this->$importer->save()->dispatch();
+
 		}
 
+		$admin_message_log->save();
 	}
 
 	/**
@@ -154,10 +185,10 @@ class Settings_Page {
 		if ( empty( $args['should_notify'] ) )
 			return;
 
-		$log = Log::get_from_db();
+		$admin_message_log = Admin_Message_Log::get_from_db();
 
-		if ( $log['last_log_saved'] ) {
-			$args['message'] = implode( '</br>', $log['msgs'] );
+		if ( $admin_message_log['last_log_saved'] ) {
+			$args['message'] = implode( '</br>', $admin_message_log['msgs'] );
 			$args['type'] = strpos( $args['message'], 'ERROR' ) !== false
 				? 'notice-warning'
 				: 'updated';
