@@ -14,9 +14,7 @@ class Yaim extends wde\Plugin {
 	public function hooks(){
         parent::hooks();
 
-        Settings_Page::get_instance( array(
-        	'main_class' => __CLASS__,
-		) );
+        Settings_Page::get_instance();
 	}
 
 }

@@ -4,10 +4,46 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "e52664cfe48b7a33049877924aed3ce5",
-    "content-hash": "90664eb1f11969a80a01b252380cc32e",
+    "hash": "c505c74cce338d28b0c18e3c2f5d61a3",
+    "content-hash": "f56f221cb6f35a1c3cdda81f7d24ff81",
     "packages": [],
     "packages-dev": [
+        {
+            "name": "a5hleyrich/wp-background-processing",
+            "version": "1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/A5hleyRich/wp-background-processing.git",
+                "reference": "1f070aab5058dbaf45d5435a343033ddd8a641b1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/A5hleyRich/wp-background-processing/zipball/1f070aab5058dbaf45d5435a343033ddd8a641b1",
+                "reference": "1f070aab5058dbaf45d5435a343033ddd8a641b1",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.2"
+            },
+            "type": "library",
+            "autoload": {
+                "classmap": [
+                    "classes/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0-only"
+            ],
+            "authors": [
+                {
+                    "name": "Ashley Rich",
+                    "email": "hello@ashleyrich.com"
+                }
+            ],
+            "description": "WP Background Processing can be used to fire off non-blocking asynchronous requests or as a background processing tool, allowing you to queue tasks.",
+            "time": "2018-02-12 09:24:05"
+        },
         {
             "name": "cmb2/cmb2",
             "version": "v2.6.0",
