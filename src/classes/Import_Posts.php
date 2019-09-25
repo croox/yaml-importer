@@ -11,21 +11,16 @@ use croox\wde\utils;
 
 class Import_Posts extends Import_Base {
 
-
-	protected $action = 'import_posts_process';
-
+	protected $action = 'import_post';
 
 	protected static $type = 'post';
 
-	protected static  $autop_keys = array(
+	protected static $autop_keys = array(
 		'post_content',
 		'post_excerpt',
 	);
 
-
-
 	protected static function setup_import_data( $object_raw_data ) {
-
 		// clean object_raw_data from not allowed fields
 		foreach( array(
 			'ID',
@@ -44,7 +39,6 @@ class Import_Posts extends Import_Base {
 				// ??? may be more
 			) ),
 		);
-
 	}
 
 	protected static function classify_atts_by_validy( $object_atts, $use_deferred = false ) {
@@ -164,7 +158,7 @@ class Import_Posts extends Import_Base {
 					'ERROR' . "\t",
 					'inserting',
 					static::$type,
-					$object_id->get_error_message()
+					'Message: ' . $object_id->get_error_message()
 				) ) );
 				continue;
 			}
@@ -240,7 +234,7 @@ class Import_Posts extends Import_Base {
 				'ERROR' . "\t",
 				'inserting',
 				static::$type,
-				$object_id->get_error_message()
+				'Message: ' . $object_id->get_error_message()
 			) ) );
 			return;
 		}
@@ -415,7 +409,7 @@ class Import_Posts extends Import_Base {
 								'creating p2p connection',
 								static::$type,
 								'$id=' . $object_id,
-								$object_id->get_error_message()
+								'Message: ' . $object_id->get_error_message()
 							) ) );
 							continue;
 						}

@@ -22,7 +22,7 @@ class Settings_Page {
 
 	protected $suported_types = array(
 		'posts',
-		// 'terms',
+		'terms',
 	);
 
 
@@ -137,9 +137,10 @@ class Settings_Page {
 
 		// ??? validate $file_data
 
+		$types_queued = array();
 		foreach( $file_data as $type => $items ) {
 			if( ! in_array( $type, $this->suported_types ) ) {
-				$admin_message_log->add_entry( "ERROR: import for {$type} not supported" );
+				$admin_message_log->add_entry( 'ERROR: Import for ' . $type . ' not supported' );
 				continue;
 			}
 
@@ -149,12 +150,18 @@ class Settings_Page {
 				$this->$importer->push_to_queue( $item_raw_data );
 			}
 			$this->$importer->save()->dispatch();
+			$types_queued[] = $type;
 
 			$admin_message_log->add_entry( 'All ' . count( $items ) . ' ' . $type . ' queued for import' );
 		}
 
 		$log_path = WP_CONTENT_DIR . '/yaml-importer/import.log';
-		$admin_message_log->add_entry( 'Start import in background, check the import.log ' . $log_path );
+
+		if ( count( $types_queued ) ) {
+			$admin_message_log->add_entry( 'Start import ' . implode( ', ', $types_queued ) . ' in background, check ' . $log_path );
+		} else {
+			$admin_message_log->add_entry( 'Nothing imported' );
+		}
 
 		$admin_message_log->save();
 	}
