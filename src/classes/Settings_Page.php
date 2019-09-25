@@ -25,31 +25,16 @@ class Settings_Page {
 		'terms',
 	);
 
-
-	protected $log;
-
 	protected static $instance = null;
 
 	public static function get_instance() {
 		if ( null === self::$instance ) {
-			// $required_args = array(
-			// 	'main_class',
-			// );
-			// foreach( $required_args as $required_arg ) {
-			// 	if ( ! array_key_exists( $required_arg, $args ) || empty( $args[$required_arg] ) ) {
-			// 		error_log( __FILE__ );
-			// 		return new \WP_Error( 'missing_arg',  sprintf( __( 'Argument "%s" missing', 'yaim' ), $required_arg ) );
-			// 	}
-			// }
 			self::$instance = new self();
 		}
 		return self::$instance;
 	}
 
-
 	public function __construct(){
-		// $this->main_class = $args['main_class'];
-		// $this->uploads_dir_path = WP_CONTENT_DIR . '/' . call_user_func( array( $this->main_class, 'get_instance' ) )->slug;
 		add_action( 'cmb2_admin_init', array( $this, 'options_page_metabox' ) );
 		add_action( 'cmb2_options-page_process_fields_' . $this->cmb_id, array( $this, 'process_fields' ), 10, 2 );
 		add_action( 'init', array( $this, 'init_importers' ) );
@@ -61,9 +46,7 @@ class Settings_Page {
 			$importer_class = __NAMESPACE__ . '\Import_' . ucfirst( $type );
 			$this->$importer = new $importer_class();
 		}
-
 	}
-
 
 	public function options_page_metabox() {
 
