@@ -13,32 +13,39 @@ class Settings_Page {
 
 	protected $main_class;
 
+	protected $uploads_dir_path;
+
 	protected $cmb_id = 'yaim_options';
+
+	protected $import_posts;
+	protected $import_terms;
+
+	protected $suported_types = array(
+		'posts',
+		'terms',
+	);
 
 	protected static $instance = null;
 
-	public static function get_instance( $args = array() ) {
+	public static function get_instance() {
 		if ( null === self::$instance ) {
-			$required_args = array(
-				'main_class',
-			);
-			foreach( $required_args as $required_arg ) {
-				if ( ! array_key_exists( $required_arg, $args ) || empty( $args[$required_arg] ) ) {
-					error_log( __FILE__ );
-					return new \WP_Error( 'missing_arg',  sprintf( __( 'Argument "%s" missing', 'yaim' ), $required_arg ) );
-				}
-			}
-			self::$instance = new self( $args );
+			self::$instance = new self();
 		}
 		return self::$instance;
 	}
 
-
-	public function __construct( $args ){
-		$this->main_class = $args['main_class'];
+	public function __construct(){
 		add_action( 'cmb2_admin_init', array( $this, 'options_page_metabox' ) );
 		add_action( 'cmb2_options-page_process_fields_' . $this->cmb_id, array( $this, 'process_fields' ), 10, 2 );
+		add_action( 'init', array( $this, 'init_importers' ) );
+	}
 
+	public function init_importers() {
+		foreach( $this->suported_types as $type ) {
+			$importer = 'import_' . $type;
+			$importer_class = __NAMESPACE__ . '\Import_' . ucfirst( $type );
+			$this->$importer = new $importer_class();
+		}
 	}
 
 	public function options_page_metabox() {
@@ -64,7 +71,7 @@ class Settings_Page {
 			// 'position'        => 1, // Menu position. Only applicable if 'parent_slug' is left empty.
 			// 'admin_menu_hook' => 'network_admin_menu', // 'network_admin_menu' to add network-level options page.
 			// 'display_cb'      => false, // Override the options-page form output (CMB2_Hookup::options_page_output()).
-			// 'save_button'     => esc_html__( 'Save Theme Options', 'yaim' ), // The text for the options-page save button. Defaults to 'Save'.
+			'save_button'     => esc_html__( 'Start Import', 'yaim' ), // The text for the options-page save button. Defaults to 'Save'.
 			// 'disable_settings_errors' => true, // On settings pages (not options-general.php sub-pages), allows disabling.
 			'message_cb'      => array( $this, 'message_cb' ),
 			// 'tab_group'       => '', // Tab-group identifier, enables options page tab navigation.
@@ -88,20 +95,21 @@ class Settings_Page {
 	function render_empty_field( $field_args, $field ) {}
 
 	public function options_cb( $field ) {
-		$uploads_dir_path = WP_CONTENT_DIR . '/' . call_user_func( array( $this->main_class, 'get_instance' ) )->slug;
-		$files = glob( $uploads_dir_path . '/*');
-
-		$labels = array_map( function( $file ) use ( $uploads_dir_path ) {
-			return str_replace( $uploads_dir_path . '/', '', $file );
+		$path = WP_CONTENT_DIR . '/yaml-importer/';
+		$files = glob( $path .'*.yaml');
+		$labels = array_map( function( $file ) use ( $path ) {
+			return str_replace( $path, '', $file );
 		}, $files );
-
 		return array_combine( $files, $labels );
 	}
 
 
 	// Do some processing just before the fileds are saved
 	public function process_fields( $cmb, $cmb_id ) {
-		$this->log = new Log();
+
+		$admin_message_log = new Admin_Message_Log();
+
+		$admin_message_log->add_entry( 'Start Import' );
 
 		$file = utils\Arr::get( $cmb->data_to_save, 'file' );
 
@@ -112,20 +120,33 @@ class Settings_Page {
 
 		// ??? validate $file_data
 
-		$cmb->data_to_save['log'] = array();
-		foreach( $file_data as $type => $objects ) {
-			switch( $type ) {
-				case 'posts':
-					$importer = new Import_Posts( $objects, $this->log );
-					break;
-				case 'terms':
-					$importer = new Import_Terms( $objects, $this->log );
-					break;
-				default:
-					$this->log->add_entry( "ERROR: import for {$type} not supported" );
+		$types_queued = array();
+		foreach( $file_data as $type => $items ) {
+			if( ! in_array( $type, $this->suported_types ) ) {
+				$admin_message_log->add_entry( 'ERROR: Import for ' . $type . ' not supported' );
+				continue;
 			}
+
+			$importer = 'import_' . $type;
+
+			foreach( $items as $item_raw_data ) {
+				$this->$importer->push_to_queue( $item_raw_data );
+			}
+			$this->$importer->save()->dispatch();
+			$types_queued[] = $type;
+
+			$admin_message_log->add_entry( 'All ' . count( $items ) . ' ' . $type . ' queued for import' );
 		}
 
+		$log_path = WP_CONTENT_DIR . '/yaml-importer/import.log';
+
+		if ( count( $types_queued ) ) {
+			$admin_message_log->add_entry( 'Start import ' . implode( ', ', $types_queued ) . ' in background, check ' . $log_path );
+		} else {
+			$admin_message_log->add_entry( 'Nothing imported' );
+		}
+
+		$admin_message_log->save();
 	}
 
 	/**
@@ -154,15 +175,17 @@ class Settings_Page {
 		if ( empty( $args['should_notify'] ) )
 			return;
 
-		$log = Log::get_from_db();
+		$admin_message_log = Admin_Message_Log::get_from_db();
 
-		if ( $log['last_log_saved'] ) {
-			$args['message'] = implode( '</br>', $log['msgs'] );
+		$log_path = WP_CONTENT_DIR . '/yaml-importer/import.log';
+
+		if ( $admin_message_log['last_log_saved'] ) {
+			$args['message'] = implode( '</br>', $admin_message_log['msgs'] );
 			$args['type'] = strpos( $args['message'], 'ERROR' ) !== false
 				? 'notice-warning'
 				: 'updated';
 		} else {
-			$args['message'] = 'Something went wrong and no log saved';
+			$args['message'] = 'Something went wrong';
 			$args['type'] = 'error';
 		}
 

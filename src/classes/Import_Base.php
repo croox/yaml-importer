@@ -9,106 +9,124 @@ if ( ! defined( 'WPINC' ) ) {
 
 use croox\wde\utils;
 
-abstract class Import_Base {
+abstract class Import_Base extends \WP_Background_Process {
 
-	protected $objects = array();
+	protected $items = array();
 
-	protected $type = '';	// eg. post, term
+	protected static $type = '';	// eg. post, term
 
-	protected $active_langs = array();
+	protected static $autop_keys = array();
 
-	protected $autop_keys = array();
+	protected $uploads_dir_path;
 
-	protected $log;
+	// public function __construct(){
+	// 	parent::__construct();
+	// }
 
-	public function __construct( $objects, $log ){
-
-		$this->active_langs = apply_filters( 'wpml_active_languages', null, array( 'skip_missing' => 0 ) );
-		$this->active_langs = null === $this->active_langs ? $this->active_langs : array_map( function( $lang ) {
-			return $lang['language_code'];
-		}, $this->active_langs );
-
-		$this->log = $log;
-
-		$this->setup_import_data( $objects );
-
-		$this->prepare_import_data();
-
-		$this->insert_objects();
-
-		return $this;
+	protected static function log( $msg = '' ) {
+		$path = WP_CONTENT_DIR . '/yaml-importer/import.log';
+		error_log(
+			sprintf( '[%s] %s %s', date('d-M-Y H:i:s T'), $msg, PHP_EOL ),
+			3,
+			$path
+		);
 	}
 
-	abstract protected function setup_import_data( $file_data );
+	protected function task( $item_raw_data ) {
 
-	protected function prepare_import_data() {
-		// classify_atts_by_validy for wp_insert_post wp_insert_term function
-		// and fix_insert_args
-		foreach( $this->objects as $object_i => $object ) {
-			if ( $object['is_wpml_import'] ) {
-				foreach( $object['atts'] as $lang => $atts ) {
-					if ( 'all' === $lang )
-						continue;
+		static::log( '' );
+		static::log( implode( ' ', array(
+			'Start' . "\t",
+			static::$type,
+			'import',
+		) ) );
 
-					// merge atts recursive for all into current atts_by_lang
-					$atts = array_merge_recursive(
-						$atts,
-						utils\Arr::get( $this->objects, $object_i . '.atts.all', array() )
-					);
+		$item = static::setup_import_data( $item_raw_data );
 
-					$atts = $this->classify_atts_by_validy( $atts, $object['is_wpml_import'] );
+		$item = static::prepare_import_data( $item );
 
-					$atts = $this->fix_insert_args( $atts );
+		static::log( implode( ' ', array(
+			'Prepared' . "\t",
+			static::$type,
+			'data',
+		) ) );
 
-					$this->objects[$object_i]['atts'][$lang] = apply_filters( "yaim_{$this->type}_atts", $atts, $lang, $object );
-				}
-			} else {
-				$atts = $this->classify_atts_by_validy( utils\Arr::get( $object, 'atts.all', array() ), $object['is_wpml_import'] );
-
-				$atts = $this->fix_insert_args( $atts );
-
-				$this->objects[$object_i]['atts']['all'] = apply_filters( "yaim_{$this->type}_atts", $atts, 'all', $object );
-			}
-		}
-	}
-
-	abstract protected function classify_atts_by_validy( $object_atts, $use_deferred = false );
-
-	protected function fix_insert_args( $atts ) {
-		return $atts;
-	}
-
-	protected function insert_objects() {
 		if ( class_exists( 'SitePress' ) ) {
 			$current_lang = apply_filters( 'wpml_current_language', null );
 			do_action( 'wpml_switch_language', apply_filters( 'wpml_default_language', null ) );
 		}
 
-		foreach( $this->objects as $i => $object ) {
-			if ( is_wp_error( $object['atts'] ) ) {
-				$this->log->add_entry( 'ERROR: ' . $object['atts']->get_error_message() );
-				continue;
-			}
-			if ( $object['is_wpml_import'] ) {
-				$this->insert_object_wmpl( $i, $object );
+		if ( ! is_wp_error( $item['atts'] ) ) {
+
+			if ( $item['is_wpml_import'] ) {
+				$item = $this->insert_item_wmpl( $item );
 			} else {
-				$this->insert_object( $i, $object );
+				$item = $this->insert_item( $item );
 			}
-			$this->log->save();
+
+		} else {
+			static::log( implode( ' ', array(
+				'ERROR',
+				$item['atts']->get_error_message()
+			) ) );
 		}
 
 		if ( class_exists( 'SitePress' ) ) {
 			do_action( 'wpml_switch_language', $current_lang, null );
 		}
+
+		static::log( 'Done' );
+		static::log( '' );
+
+		return false;
 	}
 
-	abstract protected function insert_object( $i, $object );
+	abstract protected static function setup_import_data( $item );
 
-	abstract protected function insert_object_wmpl( $i, $object );
+	// classify_atts_by_validy for wp_insert_post wp_insert_term function
+	// and fix_insert_args
+	protected static function prepare_import_data( $item ) {
+		if ( $item['is_wpml_import'] ) {
+			foreach( $item['atts'] as $lang => $atts ) {
+				if ( 'all' === $lang )
+					continue;
 
-	protected function is_wpml_import( $object_raw_data ) {
+				// merge atts recursive for all into current atts_by_lang
+				$atts = array_merge_recursive(
+					$atts,
+					utils\Arr::get( $item, 'atts.all', array() )
+				);
+
+				$atts = static::classify_atts_by_validy( $atts, $item['is_wpml_import'] );
+
+				$atts = static::fix_insert_args( $atts );
+
+				$item['atts'][$lang] = apply_filters( "yaim_" . static::$type . "_atts", $atts, $lang, $item );
+			}
+		} else {
+			$atts = static::classify_atts_by_validy( utils\Arr::get( $item, 'atts.all', array() ), $item['is_wpml_import'] );
+
+			$atts = static::fix_insert_args( $atts );
+
+			$item['atts']['all'] = apply_filters( "yaim_" . static::$type . "_atts", $atts, 'all', $item );
+		}
+
+		return $item;
+	}
+
+	abstract protected static function classify_atts_by_validy( $item_atts, $use_deferred = false );
+
+	protected static function fix_insert_args( $atts ) {
+		return $atts;
+	}
+
+	abstract protected function insert_item( $item );
+
+	abstract protected function insert_item_wmpl( $item );
+
+	protected static function is_wpml_import( $item_raw_data ) {
 		$is_wpml_import = false;
-		foreach( $object_raw_data as $key => $attr ) {
+		foreach( $item_raw_data as $key => $attr ) {
 			if ( $is_wpml_import )
 				break;
 			$is_wpml_import = is_array( $attr )
@@ -117,7 +135,7 @@ abstract class Import_Base {
 		return $is_wpml_import;
 	}
 
-	protected function classify_atts_by_lang( $object_raw_data, $not_translatable = array() ) {
+	protected static function classify_atts_by_lang( $item_raw_data, $not_translatable = array() ) {
 		$atts = array(
 			'all' => array()
 		);
@@ -127,26 +145,26 @@ abstract class Import_Base {
 		if ( null !== $default_lang )
 			$atts[$default_lang] = array();
 
-		foreach( $object_raw_data as $key => $attr ) {
+		foreach( $item_raw_data as $key => $attr ) {
 			if ( is_array( $attr ) ) {
 
-				$is_wpml_attr = $this->is_wpml_attr( $key, array_keys( $attr ) );
+				$is_wpml_attr = static::is_wpml_attr( $key, array_keys( $attr ) );
 				if ( is_wp_error( $is_wpml_attr ) ) {
-					$this->log->add_entry( 'ERROR: ' . $is_wpml_attr->get_error_message() );
+					static::log( 'ERROR: ' . $is_wpml_attr->get_error_message() );
 					continue;
 				}
 
 				if ( $is_wpml_attr ) {
 					foreach( $attr as $lang => $val ) {
 						$lang = str_replace( 'wpml_', '', $lang );
-						if ( in_array( $lang, $this->active_langs ) ) {
+						if ( in_array( $lang, static::get_active_langs() ) ) {
 							if ( in_array( $key, $not_translatable ) ) {
 								return new \WP_Error( 'attr_not_translatable', sprintf( __( '"%s" is not translatable.', 'yaim' ), $key ) );
 							} else {
-								$atts[$lang][$key] = $this->maybe_autop( $key, $val );
+								$atts[$lang][$key] = static::maybe_autop( $key, $val );
 							}
 						} else {
-							$this->log->add_entry( "ERROR: \$lang={$lang} not acive" );
+							static::log( "ERROR: \$lang={$lang} not acive" );
 						}
 					}
 				} else {
@@ -154,46 +172,46 @@ abstract class Import_Base {
 
 						if ( is_array( $n_attr ) ) {
 
-							$is_wpml_attr = $this->is_wpml_attr( $n_key, array_keys( $n_attr ) );
+							$is_wpml_attr = static::is_wpml_attr( $n_key, array_keys( $n_attr ) );
 							if ( is_wp_error( $is_wpml_attr ) ) {
-								$this->log->add_entry( 'ERROR: ' . $is_wpml_attr->get_error_message() );
+								static::log( 'ERROR: ' . $is_wpml_attr->get_error_message() );
 								continue;
 							}
 
 							if ( $is_wpml_attr ) {
 								foreach( $n_attr as $lang => $val ) {
 									$lang = str_replace( 'wpml_', '', $lang );
-									if ( in_array( $lang, $this->active_langs ) ) {
-										$atts[$lang][$key][$n_key] = $this->maybe_autop( $n_key, $val );
+									if ( in_array( $lang, static::get_active_langs() ) ) {
+										$atts[$lang][$key][$n_key] = static::maybe_autop( $n_key, $val );
 									} else {
-										$this->log->add_entry( "ERROR: \$lang={$lang} not acive" );
+										static::log( "ERROR: \$lang={$lang} not acive" );
 									}
 								}
 							} else { // is normal field
-								$atts['all'][$key][$n_key] = $this->maybe_autop( $n_key, $n_attr );
+								$atts['all'][$key][$n_key] = static::maybe_autop( $n_key, $n_attr );
 							}
 
 						} else { // is normal field
-							$atts['all'][$key][$n_key] = $this->maybe_autop( $n_key, $n_attr );
+							$atts['all'][$key][$n_key] = static::maybe_autop( $n_key, $n_attr );
 						}
 					}
 				}
 
 			} else { // is normal field
-				$atts['all'][$key] = $this->maybe_autop( $key, $attr );
+				$atts['all'][$key] = static::maybe_autop( $key, $attr );
 			}
 		}
 		return $atts;
 	}
 
-	protected function maybe_autop( $key, $val ) {
-		$autop_keys = apply_filters( "yaim_{$this->type}_autop_keys", $this->autop_keys );
+	protected static function maybe_autop( $key, $val ) {
+		$autop_keys = apply_filters( "yaim_" . static::$type . "_autop_keys", static::$autop_keys );
 		return in_array( $key, $autop_keys )
 			? wpautop( $val )
 			: $val;
 	}
 
-	protected function is_wpml_attr( $key, $keys ) {
+	protected static function is_wpml_attr( $key, $keys ) {
 		$keys_starts_wpml_ = array_unique( array_map( function( $k ) {
 			return substr( $k, 0, strlen( 'wpml_' ) ) === 'wpml_';
 		}, $keys ) );
@@ -204,20 +222,11 @@ abstract class Import_Base {
 		return $keys_starts_wpml_[0];
 	}
 
-	/**
-	 * Public getter method for retrieving protected/private variables
-	 * @param  string  		$field Field to retrieve
-	 * @return mixed        Field value or exception is thrown
-	 */
-	public function __get( $field ) {
-		if ( in_array( $field, array(
-			'objects',
-			'type',
-			'log',
-		), true ) ) {
-			return $this->{$field};
-		}
-		throw new Exception( 'Invalid property: ' . $field );
+	protected static function get_active_langs() {
+		$active_langs = apply_filters( 'wpml_active_languages', null, array( 'skip_missing' => 0 ) );
+		return is_array( $active_langs )
+			? array_map( function( $lang ) { return $lang['language_code']; }, $active_langs )
+			: array();
 	}
 
 }

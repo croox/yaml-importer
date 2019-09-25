@@ -9,7 +9,7 @@ if ( ! defined( 'WPINC' ) ) {
 
 use croox\wde\utils;
 
-class Log {
+class Admin_Message_Log {
 
 	protected $msgs = array();
 
@@ -18,7 +18,7 @@ class Log {
 	protected $start;
 
 	public function __construct(){
-		$this->start = date( 'Y-m-d H:i:s' );
+		$this->start = date('d-M-Y H:i:s T');
 		update_option( self::$option_key . '_start', $this->start );
 
 		$this->add_entries( array( $this->start, '' ) );
@@ -59,10 +59,6 @@ class Log {
 	}
 
 	public function save(){
-		$this->add_entries( array(
-			date( 'Y-m-d H:i:s' ) . ' Save log to db $option_key=' . self::$option_key,
-			'',
-		) );
 		update_option( self::$option_key, $this->msgs );
 	}
 

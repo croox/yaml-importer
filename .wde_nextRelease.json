@@ -10,7 +10,7 @@
     },
     {
       "type": "added",
-      "message": "Use `wpautop`for certain fields. Fields are filtered by \"yaim_{$this->type}_autop_keys\" filter"
+      "message": "Use `wpautop`for certain fields. Fields are filtered by \"yaim_{$type}_autop_keys\" filter"
     },
     {
       "type": "added",
@@ -19,6 +19,10 @@
     {
       "type": "changed",
       "message": "More stable log"
+    },
+    {
+      "type": "added",
+      "message": "Use a5hleyrich/wp-background-processing and process all imports in background"
     }
   ]
 }
