@@ -30,6 +30,21 @@ Upload and install this Theme the same way you'd install any other Theme.
 
 ## Changelog ##
 
+## 0.1.0 - 2019-09-25
+Background Processing
+
+### Added
+- Handle `meta_input` field for Term imports
+- Use `wpautop`for certain fields. Fields are filtered by "yaim_{$type}_autop_keys" filter
+- Handle p2p connections for post import
+- Use a5hleyrich/wp-background-processing and process all imports in background
+
+### Changed
+- More stable log
+
+### Fixed
+- Multilang values for directly nested attributes. eg `meta_input`. Also works if some directly nested attributes have translations, and others not.
+
 ## 0.0.2 - 2019-09-23
 Taxonomy Term Import
 

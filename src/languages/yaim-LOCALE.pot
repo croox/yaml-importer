@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: yaml-importer 0.0.2\n"
+"Project-Id-Version: yaml-importer 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-09-23 12:34+0545\n"
+"POT-Creation-Date: 2019-09-25 19:35+0545\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,16 +17,30 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/classes/Import_Base.php:104
+#: src/classes/Import_Base.php:162
 #, php-format
 msgid "\"%s\" is not translatable."
 msgstr ""
 
-#: src/classes/Settings_Page.php:28
+#: src/classes/Import_Base.php:220
 #, php-format
-msgid "Argument \"%s\" missing"
+msgid "\"%s\" has translated and non-translated input."
 msgstr ""
 
-#: src/classes/Settings_Page.php:51
+#: src/classes/Settings_Page.php:58
 msgid "YAML Importer"
+msgstr ""
+
+#. /add_submenu_page().
+#.
+#. The option key and admin menu page slug.
+#. 'icon_url'        => 'dashicons-download', // Menu icon. Only applicable if 'parent_slug' is left empty.
+#. 'menu_title'      => esc_html__( 'Options', 'yaim' ), // Falls back to 'title' (above).
+#. Make options page a submenu item of the themes menu.
+#. 'capability'      => 'manage_options', // Cap required to view options-page.
+#. 'position'        => 1, // Menu position. Only applicable if 'parent_slug' is left empty.
+#. 'admin_menu_hook' => 'network_admin_menu', // 'network_admin_menu' to add network-level options page.
+#. 'display_cb'      => false, // Override the options-page form output (CMB2_Hookup::options_page_output()).
+#: src/classes/Settings_Page.php:74
+msgid "Start Import"
 msgstr ""

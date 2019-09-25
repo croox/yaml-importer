@@ -1,28 +1,3 @@
 {
-  "changes": [
-    {
-      "type": "fixed",
-      "message": "Multilang values for directly nested attributes. eg `meta_input`. Also works if some directly nested attributes have translations, and others not."
-    },
-    {
-      "type": "added",
-      "message": "Handle `meta_input` field for Term imports"
-    },
-    {
-      "type": "added",
-      "message": "Use `wpautop`for certain fields. Fields are filtered by \"yaim_{$type}_autop_keys\" filter"
-    },
-    {
-      "type": "added",
-      "message": "Handle p2p connections for post import"
-    },
-    {
-      "type": "changed",
-      "message": "More stable log"
-    },
-    {
-      "type": "added",
-      "message": "Use a5hleyrich/wp-background-processing and process all imports in background"
-    }
-  ]
+  "changes": []
 }
