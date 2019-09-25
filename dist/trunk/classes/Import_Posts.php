@@ -11,69 +11,37 @@ use croox\wde\utils;
 
 class Import_Posts extends Import_Base {
 
-	protected $type = 'post';
+	protected $action = 'import_post';
 
-	protected function setup_import_data( $objects ) {
+	protected static $type = 'post';
 
-		// classify_atts_by_lang and check is_wpml_import
-		foreach( $objects as $object_i => $object_raw_data ) {
+	protected static $autop_keys = array(
+		'post_content',
+		'post_excerpt',
+	);
 
-			// clean object_raw_data from not allowed fields
-			foreach( array(
-				'ID',
-				'guid',
-			) as $not_allowed ) {
-				if ( array_key_exists( $not_allowed, $object_raw_data ) ) {
-					unset( $object_raw_data[$not_allowed] );
-				}
-			}
-
-			// check if is_wpml_import for this object
-			$is_wpml_import =
-			$is_wpml_import = $this->is_wpml_import( $object_raw_data );
-
-			$this->objects[$object_i] = array(
-				'is_wpml_import'	=> $is_wpml_import,
-				'inserted'			=> array(),
-				'atts' 				=> $this->classify_atts_by_lang( $object_raw_data, array(
-					'post_type',
-					// ??? may be more
-				) ),
-			);
-
-		}
-
-		// classify_atts_by_validy for wp_insert_post function
-		// and fix_insert_args
-		foreach( $this->objects as $object_i => $object ) {
-			if ( $object['is_wpml_import'] ) {
-				foreach( $object['atts'] as $lang => $atts ) {
-					if ( 'all' === $lang )
-						continue;
-
-					// merge atts for all into current atts_by_lang
-					$atts = array_merge(
-						$atts,
-						utils\Arr::get( $this->objects, $object_i . '.atts.all', array() )
-					);
-
-					$atts = $this->classify_atts_by_validy( $atts, $object['is_wpml_import'] );
-
-					$atts = $this->fix_insert_args( $atts );
-
-					$this->objects[$object_i]['atts'][$lang] = apply_filters( "yaim_{$this->type}_atts", $atts, $lang, $object );	// ??? should add type as param
-				}
-			} else {
-				$atts = $this->classify_atts_by_validy( utils\Arr::get( $object, 'atts.all', array() ), $object['is_wpml_import'] );
-
-				$atts = $this->fix_insert_args( $atts );
-
-				$this->objects[$object_i]['atts']['all'] = apply_filters( "yaim_{$this->type}_atts", $atts, 'all', $object );
+	protected static function setup_import_data( $item_raw_data ) {
+		// clean item_raw_data from not allowed fields
+		foreach( array(
+			'ID',
+			'guid',
+		) as $not_allowed ) {
+			if ( array_key_exists( $not_allowed, $item_raw_data ) ) {
+				unset( $item_raw_data[$not_allowed] );
 			}
 		}
+
+		return array(
+			'is_wpml_import'	=> static::is_wpml_import( $item_raw_data ),
+			'inserted'			=> array(),
+			'atts' 				=> static::classify_atts_by_lang( $item_raw_data, array(
+				'post_type',
+				// ??? may be more
+			) ),
+		);
 	}
 
-	protected function classify_atts_by_validy( $object_atts, $use_deferred = false ) {
+	protected static function classify_atts_by_validy( $item_atts, $use_deferred = false ) {
 
 		$valid_insert_args = array(
 			'post_author',
@@ -117,7 +85,7 @@ class Import_Posts extends Import_Base {
 			'custom_args'			=> array(),
 		);
 
-		foreach( $object_atts as $key => $val ) {
+		foreach( $item_atts as $key => $val ) {
 			if ( $use_deferred && in_array( $key, $deferred_insert_args ) ) {
 				$classified_atts['deferred_insert_args'][$key] = $val;
 			} elseif ( in_array( $key, $valid_insert_args ) ) {
@@ -130,7 +98,7 @@ class Import_Posts extends Import_Base {
 		return $classified_atts;
 	}
 
-	protected function fix_insert_args( $atts ) {
+	protected static function fix_insert_args( $atts ) {
 
 		foreach( array(
 			'insert_args',
@@ -171,67 +139,122 @@ class Import_Posts extends Import_Base {
 		return $atts;
 	}
 
-	protected function insert_object_wmpl( $i, $object ) {
+	protected function insert_item_wmpl( $item ) {
 
 		if ( class_exists( 'SitePress' ) ) {
 			global $sitepress;
 		}
 
-		$object_trid = null;
+		$item_trid = null;
 		$original_id = null;
-		foreach( $object['atts'] as $lang => $atts_by_lang ) {
+		foreach( $item['atts'] as $lang => $atts_by_lang ) {
 			if ( 'all' === $lang )
 				continue;
 
-			$object_id = wp_insert_post( $atts_by_lang['insert_args'] );
+			$item_id = wp_insert_post( $atts_by_lang['insert_args'] );
 
-			if ( is_wp_error( $object_id ) ) {
-				$this->log[] = 'ERROR: ' . $object_id->get_error_message();
+			if ( is_wp_error( $item_id ) ) {
+				static::log( implode( ' ', array(
+					'ERROR' . "\t",
+					'inserting',
+					static::$type,
+					'Message: ' . $item_id->get_error_message()
+				) ) );
 				continue;
 			}
 
-			// original_id of first inserted object
-			$original_id = null === $original_id ? $object_id : $original_id;
+			// original_id of first inserted item
+			$original_id = null === $original_id ? $item_id : $original_id;
 
-			$object['inserted'][$lang] = $object_id;
-			$this->objects[$i]['inserted'][$lang] = $object_id;
+			$item['inserted'][$lang] = $item_id;
 
-			$this->log[$object_id . '_in'] = "Inserted {$this->type} \$id={$object_id}";
+			static::log( implode( ' ', array(
+				'Inserted' . "\t",
+				static::$type,
+				'$id=' . $item_id,
+			) ) );
 
-			// object_trid of first inserted object
-			$object_trid = null === $object_trid
-				? $sitepress->get_element_trid( $object_id )
-				: $object_trid;
+			// item_trid of first inserted item
+			$item_trid = null === $item_trid
+				? $sitepress->get_element_trid( $item_id )
+				: $item_trid;
 
-			do_action( "yaim_{$this->type}_inserted_for_wpml_translation",
-				$object_id,
-				$this->objects[$i],
-				$lang,
-				$object_trid
-			);
+			// do_action( "yaim_" . static::$type . "_inserted_for_wpml_translation",
+			// 	$item_id,
+			// 	$item,
+			// 	$lang,
+			// 	$item_trid
+			// );
 
 			$translation_id = $sitepress->set_element_language_details(
-				$object_id,
-				'post_' . get_post_type( $object_id ),
-				$object_trid,
+				$item_id,
+				'post_' . get_post_type( $item_id ),
+				$item_trid,
 				$lang
 			);
 
-			$this->log[$object_id . '_in'] .= " \$lang={$lang} \$translation_id={$translation_id}";
-			$this->log[$object_id . '_in'] .= $original_id === $object_id ? '' : " as translation for \$id={$original_id}";
+			static::log( implode( ' ', array(
+				'Updated' . "\t",
+				static::$type,
+				'$id=' . $item_id,
+				'$lang=' . $lang,
+				'$translation_id=' . $translation_id,
+				$original_id === $item_id ? '' : 'as translation for $id=' . $original_id,
+			) ) );
 
-			do_action( "yaim_{$this->type}_wpml_language_set",
-				$object_id,
-				$this->objects[$i],
-				$lang,
-				$object_trid,
-				$translation_id
-			);
+			// do_action( "yaim_" . static::$type . "_wpml_language_set",
+			// 	$item_id,
+			// 	$item,
+			// 	$lang,
+			// 	$item_trid,
+			// 	$translation_id
+			// );
 
 		}
 
-		// do the deferred stuff
-		foreach( $object['atts'] as $lang => $atts_by_lang ) {
+
+		$item = $this->update_item_deferred( $item );
+
+		$item = $this->update_item_p2p( $item );
+
+		// if ( isset( $item_id ) )
+		// 	do_action( "yaim_" . static::$type . "_inserted", $item, $item_id );		// ??? needs $i
+
+		return $item;
+	}
+
+	protected function insert_item( $item ) {
+		$item_id = wp_insert_post( array_merge(
+			utils\Arr::get( $item, 'atts.all.insert_args', array() ),
+			utils\Arr::get( $item, 'atts.all.deferred_insert_args', array() )
+		) );
+
+		if ( is_wp_error( $item_id ) ) {
+			static::log( implode( ' ', array(
+				'ERROR' . "\t",
+				'inserting',
+				static::$type,
+				'Message: ' . $item_id->get_error_message()
+			) ) );
+			return;
+		}
+
+		$item['inserted']['all'] = $item_id;
+
+		$this->update_item_p2p( $item );
+
+		static::log( implode( ' ', array(
+			'Inserted' . "\t",
+			static::$type,
+			'$id=' . $item_id,
+		) ) );
+
+		// do_action( "yaim_" . static::$type . "_inserted", $item, $item_id );
+	}
+
+	protected function update_item_deferred( $item ) {
+
+		foreach( $item['atts'] as $lang => $atts_by_lang ) {
 			if ( 'all' === $lang )
 				continue;
 
@@ -239,15 +262,15 @@ class Import_Posts extends Import_Base {
 				|| empty( $atts_by_lang['deferred_insert_args'] ) )
 				continue;
 
-			$object_id = utils\Arr::get( $object, 'inserted.' . $lang, false );
+			$item_id = utils\Arr::get( $item, 'inserted.' . $lang, false );
 
-			if ( ! $object_id )
+			if ( ! $item_id )
 				continue;
 
 			$args = array_merge(
 				array(
-					'ID' => $object_id,
-					'post_type' => get_post_type( $object_id ),
+					'ID' => $item_id,
+					'post_type' => get_post_type( $item_id ),
 				),
 				$atts_by_lang['deferred_insert_args']
 			);
@@ -258,36 +281,152 @@ class Import_Posts extends Import_Base {
 			$updated = wp_update_post( $args, true );
 
 			if ( is_wp_error( $updated ) ) {
-				$this->log[] = "ERROR updating {$object_id}: " . $updated->get_error_message();
+				static::log( implode( ' ', array(
+					'WARNING' . "\t",
+					'updating',
+					'$id=' . $item_id,
+					static::$type,
+					$updated->get_error_message(),
+				) ) );
 				continue;
 			}
 
-			$this->log[$object_id . '_up'] = "Updated {$this->type} \$id={$object_id} \$args=[" . implode( ', ', array_keys( $atts_by_lang['deferred_insert_args'] ) ) . "] and wpml should have done the sync";
+			static::log( implode( ' ', array(
+				'Updated' . "\t",
+				static::$type,
+				'$id=' . $item_id,
+				'$args=[' . implode( ', ', array_keys( $atts_by_lang['deferred_insert_args'] ) ) . ']',
+				'and wpml should have done the sync',
+			) ) );
+
+
 		}
 
-		if ( isset( $object_id ) )
-			$this->log[$object_id . '_after'] = '';
-
-		do_action( "yaim_{$this->type}_inserted", $this->objects[$i], $object_id );
-
+		return $item;
 	}
 
-	protected function insert_object( $i, $object ) {
-		$object_id = wp_insert_post( array_merge(
-			utils\Arr::get( $object, 'atts.all.insert_args', array() ),
-			utils\Arr::get( $object, 'atts.all.deferred_insert_args', array() )
-		) );
+	protected function update_item_p2p( $item ) {
+		if ( class_exists( 'P2P_Connection_Type_Factory' ) ) {
+			foreach( $item['atts'] as $lang => $atts_by_lang ) {
+				if ( 'all' === $lang )
+					continue;
 
-		if ( is_wp_error( $object_id ) ) {
-			$this->log[] = 'ERROR: ' . $object_id->get_error_message();
-			return;
+				$p2p = utils\Arr::get( $atts_by_lang,'custom_args.p2p' );
+
+				if ( ! $p2p )
+					continue;
+
+				$item_id = utils\Arr::get( $item, 'inserted.' . $lang, false );
+
+				if ( ! $item_id )
+					continue;
+
+				foreach( $p2p as $ctype_name => $conns ) {
+
+					$ctype = \P2P_Connection_Type_Factory::get_instance( $ctype_name );
+
+					$item_side = false;
+					$item_post_type = get_post_type( $item_id );
+					$both_sides_are_posttype = true;
+					$conn_post_type = false;
+					foreach( $ctype->side as $direction => $side ) {
+						if ( ! $side instanceof \P2P_Side_Post ) {
+							$both_sides_are_posttype = false;
+							continue;
+						}
+						if ( in_array( $item_post_type, utils\Arr::get( $side->query_vars, 'post_type' ) ) ) {
+							$item_side = ! $item_side
+								? $direction
+								: $item_side;
+						} else {
+							$conn_post_type = ! $conn_post_type
+								? utils\Arr::get( $side->query_vars, 'post_type.0' )
+								: $conn_post_type;
+						}
+					}
+
+					if ( ! $both_sides_are_posttype ) {
+						static::log( implode( ' ', array(
+							'WARNING' . "\t",
+							'updating',
+							static::$type,
+							'Currently p2p connections are only supported, if both connection sides represent a posttype',
+						) ) );
+						continue;
+					}
+
+					if ( ! $item_side ) {
+						static::log( implode( ' ', array(
+							'WARNING' . "\t",
+							'updating',
+							static::$type,
+							'No side of $connection_type=' . $ctype_name . ' represents $posttype=' . $item_post_type,
+						) ) );
+						continue;
+					}
+
+					$connected_post_ids = array();
+					foreach( $conns as $conn_k => $conn_v ) {
+
+						$conn_post_slug = is_array( $conn_v ) || ( is_string( $conn_v ) && empty( $conn_v ) )
+							? $conn_k
+							: $conn_v;
+
+						$get_post_args = array(
+							'name'           => $conn_post_slug,
+							'posts_per_page' => 1,
+							'post_type'      => $conn_post_type,
+							'fields'      	 => 'ids',
+						);
+						$get_post_args = class_exists( 'SitePress' ) ? array_merge( $get_post_args, array(
+							'lang' => apply_filters( 'wpml_current_language', null ),
+							'suppress_filters'  => false,
+						) ) : $get_post_args;
+
+						$conn_post_id = utils\Arr::get( get_posts( $get_post_args ), '0', false );
+
+						if ( ! $conn_post_id ) {
+							static::log( implode( ' ', array(
+								'ERROR' . "\t",
+								'updating',
+								static::$type,
+								'$id=' . $item_id,
+								'can not create p2p connection, can not find post with $slug=' . $conn_post_slug,
+							) ) );
+							continue;
+						}
+
+						// create connection
+						$p2p_id = $ctype->connect(
+							'from' === $item_side ? $item_id : $conn_post_id,
+							'to' === $item_side ? $item_id : $conn_post_id,
+							is_array( $conn_v ) ? $conn_v : array()
+						);
+
+						if ( is_wp_error( $p2p_id ) ) {
+							static::log( implode( ' ', array(
+								'ERROR' . "\t",
+								'creating p2p connection',
+								static::$type,
+								'$id=' . $item_id,
+								'Message: ' . $item_id->get_error_message()
+							) ) );
+							continue;
+						}
+						$connected_post_ids[] = $conn_post_id;
+					}
+
+					static::log( implode( ' ', array(
+						'Updated' . "\t",
+						static::$type,
+						'$id=' . $item_id,
+						'p2p connected with post $ids=[' . implode( ', ', $connected_post_ids ) . ']',
+						'$ctype_name=' . $ctype_name,
+					) ) );
+				}
+			}
 		}
-
-		$this->objects[$i]['inserted']['all'] = $object_id;
-
-		$this->log[$object_id . '_in'] = "Inserted {$this->type} \$id={$object_id}";
-
-		do_action( "yaim_{$this->type}_inserted", $this->objects[$i], null );
+		return $item;
 	}
 
 }
