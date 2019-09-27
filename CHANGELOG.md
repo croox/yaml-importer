@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.1.2 - 2019-09-27
+Print parsed yaml file to import.log
+
+### Added
+- Print parsed yaml file to import.log
+
+### Changed
+- Update to wp-dev-env-frame#0.7.3
+
 ## 0.1.1 - 2019-09-27
 Update readme
 
