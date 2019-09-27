@@ -176,7 +176,8 @@ class Import_Terms extends Import_Base {
 						'Updated' . "\t",
 						static::$type,
 						'$id=' . $item_id,
-						'added $meta_key=' . $meta_key . ' $meta_id ' . $updated,
+						'added $meta_key=' . $meta_key,
+						'$meta_id=' . $updated,
 					) ) );
 				} elseif ( $updated ) {
 					yaim_log( implode( ' ', array(
