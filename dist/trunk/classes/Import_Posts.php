@@ -145,7 +145,7 @@ class Import_Posts extends Import_Base {
 			global $sitepress;
 		}
 
-		$item_trid = null;
+		$original_trid = null;
 		$original_id = null;
 		foreach( $item['atts'] as $lang => $atts_by_lang ) {
 			if ( 'all' === $lang )
@@ -154,7 +154,7 @@ class Import_Posts extends Import_Base {
 			$item_id = wp_insert_post( $atts_by_lang['insert_args'] );
 
 			if ( is_wp_error( $item_id ) ) {
-				static::log( implode( ' ', array(
+				yaim_log( implode( ' ', array(
 					'ERROR' . "\t",
 					'inserting',
 					static::$type,
@@ -168,32 +168,32 @@ class Import_Posts extends Import_Base {
 
 			$item['inserted'][$lang] = $item_id;
 
-			static::log( implode( ' ', array(
+			yaim_log( implode( ' ', array(
 				'Inserted' . "\t",
 				static::$type,
 				'$id=' . $item_id,
 			) ) );
 
-			// item_trid of first inserted item
-			$item_trid = null === $item_trid
+			// original_trid of first inserted item
+			$original_trid = null === $original_trid
 				? $sitepress->get_element_trid( $item_id )
-				: $item_trid;
+				: $original_trid;
 
-			// do_action( "yaim_" . static::$type . "_inserted_for_wpml_translation",
-			// 	$item_id,
-			// 	$item,
-			// 	$lang,
-			// 	$item_trid
-			// );
+			do_action( 'yaim_' . static::$type . '_inserted_for_wpml_translation',
+				$item_id,
+				$item,
+				$lang,
+				$original_trid
+			);
 
 			$translation_id = $sitepress->set_element_language_details(
 				$item_id,
 				'post_' . get_post_type( $item_id ),
-				$item_trid,
+				$original_trid,
 				$lang
 			);
 
-			static::log( implode( ' ', array(
+			yaim_log( implode( ' ', array(
 				'Updated' . "\t",
 				static::$type,
 				'$id=' . $item_id,
@@ -202,13 +202,13 @@ class Import_Posts extends Import_Base {
 				$original_id === $item_id ? '' : 'as translation for $id=' . $original_id,
 			) ) );
 
-			// do_action( "yaim_" . static::$type . "_wpml_language_set",
-			// 	$item_id,
-			// 	$item,
-			// 	$lang,
-			// 	$item_trid,
-			// 	$translation_id
-			// );
+			do_action( 'yaim_' . static::$type . '_wpml_language_set',
+				$item_id,
+				$item,
+				$lang,
+				$original_trid,
+				$translation_id
+			);
 
 		}
 
@@ -217,8 +217,12 @@ class Import_Posts extends Import_Base {
 
 		$item = $this->update_item_p2p( $item );
 
-		// if ( isset( $item_id ) )
-		// 	do_action( "yaim_" . static::$type . "_inserted", $item, $item_id );		// ??? needs $i
+		if ( isset( $item_id ) ) {
+			do_action( 'yaim_' . static::$type . '_inserted',
+				$item,
+				$item_id
+			);
+		}
 
 		return $item;
 	}
@@ -230,7 +234,7 @@ class Import_Posts extends Import_Base {
 		) );
 
 		if ( is_wp_error( $item_id ) ) {
-			static::log( implode( ' ', array(
+			yaim_log( implode( ' ', array(
 				'ERROR' . "\t",
 				'inserting',
 				static::$type,
@@ -243,13 +247,18 @@ class Import_Posts extends Import_Base {
 
 		$this->update_item_p2p( $item );
 
-		static::log( implode( ' ', array(
+		yaim_log( implode( ' ', array(
 			'Inserted' . "\t",
 			static::$type,
 			'$id=' . $item_id,
 		) ) );
 
-		// do_action( "yaim_" . static::$type . "_inserted", $item, $item_id );
+		do_action( 'yaim_' . static::$type . '_inserted',
+			$item,
+			$item_id
+		);
+
+		return $item;
 	}
 
 	protected function update_item_deferred( $item ) {
@@ -281,7 +290,7 @@ class Import_Posts extends Import_Base {
 			$updated = wp_update_post( $args, true );
 
 			if ( is_wp_error( $updated ) ) {
-				static::log( implode( ' ', array(
+				yaim_log( implode( ' ', array(
 					'WARNING' . "\t",
 					'updating',
 					'$id=' . $item_id,
@@ -291,7 +300,7 @@ class Import_Posts extends Import_Base {
 				continue;
 			}
 
-			static::log( implode( ' ', array(
+			yaim_log( implode( ' ', array(
 				'Updated' . "\t",
 				static::$type,
 				'$id=' . $item_id,
@@ -346,7 +355,7 @@ class Import_Posts extends Import_Base {
 					}
 
 					if ( ! $both_sides_are_posttype ) {
-						static::log( implode( ' ', array(
+						yaim_log( implode( ' ', array(
 							'WARNING' . "\t",
 							'updating',
 							static::$type,
@@ -356,7 +365,7 @@ class Import_Posts extends Import_Base {
 					}
 
 					if ( ! $item_side ) {
-						static::log( implode( ' ', array(
+						yaim_log( implode( ' ', array(
 							'WARNING' . "\t",
 							'updating',
 							static::$type,
@@ -386,7 +395,7 @@ class Import_Posts extends Import_Base {
 						$conn_post_id = utils\Arr::get( get_posts( $get_post_args ), '0', false );
 
 						if ( ! $conn_post_id ) {
-							static::log( implode( ' ', array(
+							yaim_log( implode( ' ', array(
 								'ERROR' . "\t",
 								'updating',
 								static::$type,
@@ -404,7 +413,7 @@ class Import_Posts extends Import_Base {
 						);
 
 						if ( is_wp_error( $p2p_id ) ) {
-							static::log( implode( ' ', array(
+							yaim_log( implode( ' ', array(
 								'ERROR' . "\t",
 								'creating p2p connection',
 								static::$type,
@@ -416,13 +425,23 @@ class Import_Posts extends Import_Base {
 						$connected_post_ids[] = $conn_post_id;
 					}
 
-					static::log( implode( ' ', array(
-						'Updated' . "\t",
-						static::$type,
-						'$id=' . $item_id,
-						'p2p connected with post $ids=[' . implode( ', ', $connected_post_ids ) . ']',
-						'$ctype_name=' . $ctype_name,
-					) ) );
+					if ( count( $connected_post_ids ) > 0 ) {
+						yaim_log( implode( ' ', array(
+							'Updated' . "\t",
+							static::$type,
+							'$id=' . $item_id,
+							'p2p connected with post $ids=[' . implode( ', ', $connected_post_ids ) . ']',
+							'$ctype_name=' . $ctype_name,
+						) ) );
+					} else {
+						yaim_log( implode( ' ', array(
+							'' . "\t\t",
+							static::$type,
+							'$id=' . $item_id,
+							'no connections created for',
+							'$ctype_name=' . $ctype_name,
+						) ) );
+					}
 				}
 			}
 		}

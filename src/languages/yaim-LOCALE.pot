@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: yaml-importer 0.1.0\n"
+"Project-Id-Version: yaml-importer 0.1.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-09-25 19:35+0545\n"
+"POT-Creation-Date: 2019-09-27 14:51+0545\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,12 +17,12 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/classes/Import_Base.php:162
+#: src/classes/Import_Base.php:153
 #, php-format
 msgid "\"%s\" is not translatable."
 msgstr ""
 
-#: src/classes/Import_Base.php:220
+#: src/classes/Import_Base.php:211
 #, php-format
 msgid "\"%s\" has translated and non-translated input."
 msgstr ""
