@@ -82,7 +82,7 @@ class Import_Terms extends Import_Base {
 			global $sitepress;
 		}
 
-		$item_trid = null;
+		$original_trid = null;
 		$original_id = null;
 		foreach( $item['atts'] as $lang => $atts_by_lang ) {
 			if ( 'all' === $lang )
@@ -95,7 +95,7 @@ class Import_Terms extends Import_Base {
 			$term_tax_ids = wp_insert_term( $name, $taxonomy, $args );
 
 			if ( is_wp_error( $term_tax_ids ) ) {
-				static::log( implode( ' ', array(
+				yaim_log( implode( ' ', array(
 					'ERROR' . "\t",
 					'inserting',
 					static::$type,
@@ -111,32 +111,32 @@ class Import_Terms extends Import_Base {
 
 			$item['inserted'][$lang] = $item_id;
 
-			static::log( implode( ' ', array(
+			yaim_log( implode( ' ', array(
 				'Inserted' . "\t",
 				static::$type,
 				'$id=' . $item_id,
 			) ) );
 
-			// item_trid of first inserted item
-			$item_trid = null === $item_trid
+			// original_trid of first inserted item
+			$original_trid = null === $original_trid
 				? apply_filters( 'wpml_element_trid', NULL, $item_id, 'tax_' . $taxonomy )
-				: $item_trid;
+				: $original_trid;
 
-			// do_action( "yaim_{$this->type}_inserted_for_wpml_translation",
-			// 	$item_id,
-			// 	$this->items[$i],
-			// 	$lang,
-			// 	$item_trid
-			// );
+			do_action( 'yaim_' . static::$type . '_inserted_for_wpml_translation',
+				$item_id,
+				$item,
+				$lang,
+				$original_trid
+			);
 
 			$translation_id = $sitepress->set_element_language_details(
 				$item_id,
 				'tax_' . $taxonomy,
-				$item_trid,
+				$original_trid,
 				$lang
 			);
 
-			static::log( implode( ' ', array(
+			yaim_log( implode( ' ', array(
 				'Updated' . "\t",
 				static::$type,
 				'$id=' . $item_id,
@@ -145,13 +145,13 @@ class Import_Terms extends Import_Base {
 				$original_id === $item_id ? '' : 'as translation for $id=' . $original_id,
 			) ) );
 
-			// do_action( "yaim_{$this->type}_wpml_language_set",
-			// 	$item_id,
-			// 	$this->items[$i],
-			// 	$lang,
-			// 	$item_trid,
-			// 	$translation_id
-			// );
+			do_action( 'yaim_' . static::$type . '_wpml_language_set',
+				$item_id,
+				$item,
+				$lang,
+				$original_trid,
+				$translation_id
+			);
 		}
 
 		// handle meta_input
@@ -172,21 +172,21 @@ class Import_Terms extends Import_Base {
 			foreach( $meta_input as $meta_key => $meta_val ) {
 				$updated = update_term_meta( $item_id, $meta_key, $meta_val );
 				if ( is_numeric( $updated ) && $updated == ( int ) $updated ) {
-					static::log( implode( ' ', array(
+					yaim_log( implode( ' ', array(
 						'Updated' . "\t",
 						static::$type,
 						'$id=' . $item_id,
 						'added $meta_key=' . $meta_key . ' $meta_id ' . $updated,
 					) ) );
 				} elseif ( $updated ) {
-					static::log( implode( ' ', array(
+					yaim_log( implode( ' ', array(
 						'Updated' . "\t",
 						static::$type,
 						'$id=' . $item_id,
 						'updated $meta_key=' . $meta_key,
 					) ) );
 				} else {
-					static::log( implode( ' ', array(
+					yaim_log( implode( ' ', array(
 						'ERROR' . "\t",
 						'updating',
 						static::$type,
@@ -198,9 +198,14 @@ class Import_Terms extends Import_Base {
 			}
 		}
 
-		// if ( isset( $item_id ) )
-		// 	do_action( "yaim_{$this->type}_inserted", $this->items[$i], $item_id );
+		if ( isset( $item_id ) ) {
+			do_action( 'yaim_' . static::$type . '_inserted',
+				$item,
+				$item_id
+			);
+		}
 
+		return $item;
 	}
 
 	protected function insert_item( $item ) {
@@ -211,7 +216,7 @@ class Import_Terms extends Import_Base {
 		$term_tax_ids = wp_insert_term( $name, $taxonomy, $args );
 
 		if ( is_wp_error( $term_tax_ids ) ) {
-			static::log( implode( ' ', array(
+			yaim_log( implode( ' ', array(
 				'ERROR' . "\t",
 				'inserting',
 				static::$type,
@@ -223,13 +228,18 @@ class Import_Terms extends Import_Base {
 		$item_id = $term_tax_ids['term_id'];
 		$item['inserted']['all'] = $item_id;
 
-		static::log( implode( ' ', array(
+		yaim_log( implode( ' ', array(
 			'Inserted' . "\t",
 			static::$type,
 			'$id=' . $item_id,
 		) ) );
 
-		// do_action( "yaim_{$this->type}_inserted", $this->items[$i], null );
+		do_action( 'yaim_' . static::$type . '_inserted',
+			$item,
+			$item_id
+		);
+
+		return $item;
 	}
 
 }
