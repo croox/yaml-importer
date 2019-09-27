@@ -1,8 +1,3 @@
 {
-  "changes": [
-    {
-      "type": "changed",
-      "message": "Update to wp-dev-env-frame#0.7.3"
-    }
-  ]
+  "changes": []
 }

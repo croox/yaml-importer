@@ -71,7 +71,7 @@ class Settings_Page {
 			// 'position'        => 1, // Menu position. Only applicable if 'parent_slug' is left empty.
 			// 'admin_menu_hook' => 'network_admin_menu', // 'network_admin_menu' to add network-level options page.
 			// 'display_cb'      => false, // Override the options-page form output (CMB2_Hookup::options_page_output()).
-			'save_button'     => esc_html__( 'Start Import', 'yaim' ), // The text for the options-page save button. Defaults to 'Save'.
+			'save_button'     => esc_html__( 'Start', 'yaim' ), // The text for the options-page save button. Defaults to 'Save'.
 			// 'disable_settings_errors' => true, // On settings pages (not options-general.php sub-pages), allows disabling.
 			'message_cb'      => array( $this, 'message_cb' ),
 			// 'tab_group'       => '', // Tab-group identifier, enables options page tab navigation.
@@ -89,6 +89,20 @@ class Settings_Page {
 			'save_field' 		=> false,
 			'options_cb'       	=> array( $this, 'options_cb' ),
 		) );
+
+		$cmb->add_field( array(
+			'name'             => 'What to do',
+			'id'               => 'task',
+			'type'             => 'radio',
+			'show_option_none' => false,
+			'save_field' 		=> false,
+			'default'          => 'show_parsed',
+			'options'          => array(
+				'show_parsed' 	=> __( 'Print parsed file to import.log', 'yaim' ),
+				'import'   		=> __( 'Import', 'yaim' ),
+			),
+		) );
+
 
 	}
 
@@ -109,9 +123,9 @@ class Settings_Page {
 
 		$admin_message_log = new Admin_Message_Log();
 
-		$admin_message_log->add_entry( 'Start Import' );
 
 		$file = utils\Arr::get( $cmb->data_to_save, 'file' );
+		$task = utils\Arr::get( $cmb->data_to_save, 'task' );
 
 		if ( empty( $file ) )
 			return;
@@ -120,25 +134,44 @@ class Settings_Page {
 
 		// ??? validate $file_data
 
+		$log_path = WP_CONTENT_DIR . '/yaml-importer/import.log';
 		$types_queued = array();
-		foreach( $file_data as $type => $items ) {
-			if( ! in_array( $type, $this->suported_types ) ) {
-				$admin_message_log->add_entry( 'ERROR: Import for ' . $type . ' not supported' );
-				continue;
-			}
 
-			$importer = 'import_' . $type;
+		switch( $task ) {
 
-			foreach( $items as $item_raw_data ) {
-				$this->$importer->push_to_queue( $item_raw_data );
-			}
-			$this->$importer->save()->dispatch();
-			$types_queued[] = $type;
+			case 'show_parsed':
+				ob_start();
+				print_r( $file_data );
+				$file_data_str = ob_get_clean();
+				yaim_log( $file_data_str );
+				$admin_message_log->add_entry( 'Print parsed yaml file to ' . $log_path );
+				break;
 
-			$admin_message_log->add_entry( 'All ' . count( $items ) . ' ' . $type . ' queued for import' );
+			case 'import':
+				$admin_message_log->add_entry( 'Start Import' );
+
+				foreach( $file_data as $type => $items ) {
+					if( ! in_array( $type, $this->suported_types ) ) {
+						$admin_message_log->add_entry( 'ERROR: Import for ' . $type . ' not supported' );
+						continue;
+					}
+
+					$importer = 'import_' . $type;
+
+					foreach( $items as $item_raw_data ) {
+						$this->$importer->push_to_queue( $item_raw_data );
+					}
+					$this->$importer->save()->dispatch();
+					$types_queued[] = $type;
+
+					$admin_message_log->add_entry( 'All ' . count( $items ) . ' ' . $type . ' queued for import' );
+				}
+
+
+				break;
 		}
 
-		$log_path = WP_CONTENT_DIR . '/yaml-importer/import.log';
+
 
 		if ( count( $types_queued ) ) {
 			$admin_message_log->add_entry( 'Start import ' . implode( ', ', $types_queued ) . ' in background, check ' . $log_path );
