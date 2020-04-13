@@ -1,11 +1,10 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "hash": "c2ae083c28440e3e3a45b6cb665954cf",
-    "content-hash": "bd52802b1a6305ba505440089fb098f5",
+    "content-hash": "9db8b8787839b951998e175805430472",
     "packages": [],
     "packages-dev": [
         {
@@ -42,20 +41,20 @@
                 }
             ],
             "description": "WP Background Processing can be used to fire off non-blocking asynchronous requests or as a background processing tool, allowing you to queue tasks.",
-            "time": "2018-02-12 09:24:05"
+            "time": "2018-02-12T09:24:05+00:00"
         },
         {
             "name": "cmb2/cmb2",
-            "version": "v2.6.0",
+            "version": "v2.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/CMB2/CMB2.git",
-                "reference": "008d9b83263d971d6bd41c27e31113db852d5ef3"
+                "reference": "438c26dda7ac110d0741448d65614b3ec6379034"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/CMB2/CMB2/zipball/008d9b83263d971d6bd41c27e31113db852d5ef3",
-                "reference": "008d9b83263d971d6bd41c27e31113db852d5ef3",
+                "url": "https://api.github.com/repos/CMB2/CMB2/zipball/438c26dda7ac110d0741448d65614b3ec6379034",
+                "reference": "438c26dda7ac110d0741448d65614b3ec6379034",
                 "shasum": ""
             },
             "require": {
@@ -76,15 +75,15 @@
             ],
             "authors": [
                 {
-                    "name": "WebDevStudios",
-                    "email": "contact@webdevstudios.com",
-                    "homepage": "https://github.com/WebDevStudios",
-                    "role": "Developer"
-                },
-                {
                     "name": "Justin Sternberg",
                     "email": "justin@dsgnwrks.pro",
                     "homepage": "https://dsgnwrks.pro",
+                    "role": "Developer"
+                },
+                {
+                    "name": "WebDevStudios",
+                    "email": "contact@webdevstudios.com",
+                    "homepage": "https://github.com/WebDevStudios",
                     "role": "Developer"
                 }
             ],
@@ -95,32 +94,35 @@
                 "plugin",
                 "wordpress"
             ],
-            "time": "2019-01-21 04:30:08"
+            "time": "2020-01-21T17:49:50+00:00"
         },
         {
             "name": "composer/installers",
-            "version": "v1.7.0",
+            "version": "v1.9.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/installers.git",
-                "reference": "141b272484481432cda342727a427dc1e206bfa0"
+                "reference": "b93bcf0fa1fccb0b7d176b0967d969691cd74cca"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/installers/zipball/141b272484481432cda342727a427dc1e206bfa0",
-                "reference": "141b272484481432cda342727a427dc1e206bfa0",
+                "url": "https://api.github.com/repos/composer/installers/zipball/b93bcf0fa1fccb0b7d176b0967d969691cd74cca",
+                "reference": "b93bcf0fa1fccb0b7d176b0967d969691cd74cca",
                 "shasum": ""
             },
             "require": {
-                "composer-plugin-api": "^1.0"
+                "composer-plugin-api": "^1.0 || ^2.0"
             },
             "replace": {
                 "roundcube/plugin-installer": "*",
                 "shama/baton": "*"
             },
             "require-dev": {
-                "composer/composer": "1.0.*@dev",
-                "phpunit/phpunit": "^4.8.36"
+                "composer/composer": "1.6.* || 2.0.*@dev",
+                "composer/semver": "1.0.* || 2.0.*@dev",
+                "phpunit/phpunit": "^4.8.36",
+                "sebastian/comparator": "^1.2.4",
+                "symfony/process": "^2.3"
             },
             "type": "composer-plugin",
             "extra": {
@@ -156,6 +158,7 @@
                 "Kanboard",
                 "Lan Management System",
                 "MODX Evo",
+                "MantisBT",
                 "Mautic",
                 "Maya",
                 "OXID",
@@ -210,6 +213,7 @@
                 "shopware",
                 "silverstripe",
                 "sydes",
+                "sylius",
                 "symfony",
                 "typo3",
                 "wordpress",
@@ -217,20 +221,20 @@
                 "zend",
                 "zikula"
             ],
-            "time": "2019-08-12 15:00:31"
+            "time": "2020-04-07T06:57:05+00:00"
         },
         {
             "name": "croox/wp-dev-env-frame",
-            "version": "0.7.3",
+            "version": "0.8.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/croox/wp-dev-env-frame.git",
-                "reference": "da5d3b80f93100f7c58ae5875b29acff9f40e1af"
+                "reference": "99dbf7e246220114482aa1f0e589f72902651678"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/croox/wp-dev-env-frame/zipball/da5d3b80f93100f7c58ae5875b29acff9f40e1af",
-                "reference": "da5d3b80f93100f7c58ae5875b29acff9f40e1af",
+                "url": "https://api.github.com/repos/croox/wp-dev-env-frame/zipball/99dbf7e246220114482aa1f0e589f72902651678",
+                "reference": "99dbf7e246220114482aa1f0e589f72902651678",
                 "shasum": ""
             },
             "type": "library",
@@ -251,10 +255,10 @@
             "description": "some frame for wp-dev-env",
             "homepage": "https://github.com/croox/wp-dev-env-frame",
             "support": {
-                "source": "https://github.com/croox/wp-dev-env-frame/tree/0.7.3",
+                "source": "https://github.com/croox/wp-dev-env-frame/tree/0.8.0",
                 "issues": "https://github.com/croox/wp-dev-env-frame/issues"
             },
-            "time": "2019-09-27 11:42:28"
+            "time": "2020-04-11T07:11:39+00:00"
         },
         {
             "name": "dealerdirect/phpcodesniffer-composer-installer",
@@ -320,20 +324,20 @@
                 "stylecheck",
                 "tests"
             ],
-            "time": "2018-10-26 13:21:45"
+            "time": "2018-10-26T13:21:45+00:00"
         },
         {
             "name": "mustangostang/spyc",
-            "version": "0.6.2",
+            "version": "0.6.3",
             "source": {
                 "type": "git",
-                "url": "https://github.com/mustangostang/spyc.git",
-                "reference": "23c35ae854d835f2d7bcc3e3ad743d7e57a8c14d"
+                "url": "git@github.com:mustangostang/spyc.git",
+                "reference": "4627c838b16550b666d15aeae1e5289dd5b77da0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mustangostang/spyc/zipball/23c35ae854d835f2d7bcc3e3ad743d7e57a8c14d",
-                "reference": "23c35ae854d835f2d7bcc3e3ad743d7e57a8c14d",
+                "url": "https://api.github.com/repos/mustangostang/spyc/zipball/4627c838b16550b666d15aeae1e5289dd5b77da0",
+                "reference": "4627c838b16550b666d15aeae1e5289dd5b77da0",
                 "shasum": ""
             },
             "require": {
@@ -370,20 +374,20 @@
                 "yaml",
                 "yml"
             ],
-            "time": "2017-02-24 16:06:33"
+            "time": "2019-09-10T13:16:29+00:00"
         },
         {
             "name": "phpcompatibility/php-compatibility",
-            "version": "9.3.1",
+            "version": "9.3.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHPCompatibility/PHPCompatibility.git",
-                "reference": "9999344e47e7af6b00e1a898eacc4e4368fb7196"
+                "reference": "9fb324479acf6f39452e0655d2429cc0d3914243"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHPCompatibility/PHPCompatibility/zipball/9999344e47e7af6b00e1a898eacc4e4368fb7196",
-                "reference": "9999344e47e7af6b00e1a898eacc4e4368fb7196",
+                "url": "https://api.github.com/repos/PHPCompatibility/PHPCompatibility/zipball/9fb324479acf6f39452e0655d2429cc0d3914243",
+                "reference": "9fb324479acf6f39452e0655d2429cc0d3914243",
                 "shasum": ""
             },
             "require": {
@@ -428,20 +432,20 @@
                 "phpcs",
                 "standards"
             ],
-            "time": "2019-09-05 18:36:49"
+            "time": "2019-12-27T09:44:58+00:00"
         },
         {
             "name": "phpcompatibility/phpcompatibility-paragonie",
-            "version": "1.1.0",
+            "version": "1.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHPCompatibility/PHPCompatibilityParagonie.git",
-                "reference": "b1bb79a7cab1fb856b56f1b5cf110b6e52d8e936"
+                "reference": "b862bc32f7e860d0b164b199bd995e690b4b191c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHPCompatibility/PHPCompatibilityParagonie/zipball/b1bb79a7cab1fb856b56f1b5cf110b6e52d8e936",
-                "reference": "b1bb79a7cab1fb856b56f1b5cf110b6e52d8e936",
+                "url": "https://api.github.com/repos/PHPCompatibility/PHPCompatibilityParagonie/zipball/b862bc32f7e860d0b164b199bd995e690b4b191c",
+                "reference": "b862bc32f7e860d0b164b199bd995e690b4b191c",
                 "shasum": ""
             },
             "require": {
@@ -480,7 +484,7 @@
                 "polyfill",
                 "standards"
             ],
-            "time": "2019-08-28 15:58:19"
+            "time": "2019-11-04T15:17:54+00:00"
         },
         {
             "name": "phpcompatibility/phpcompatibility-wp",
@@ -530,20 +534,20 @@
                 "standards",
                 "wordpress"
             ],
-            "time": "2019-08-28 14:22:28"
+            "time": "2019-08-28T14:22:28+00:00"
         },
         {
             "name": "squizlabs/php_codesniffer",
-            "version": "3.5.0",
+            "version": "3.5.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/squizlabs/PHP_CodeSniffer.git",
-                "reference": "0afebf16a2e7f1e434920fa976253576151effe9"
+                "reference": "dceec07328401de6211037abbb18bda423677e26"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/squizlabs/PHP_CodeSniffer/zipball/0afebf16a2e7f1e434920fa976253576151effe9",
-                "reference": "0afebf16a2e7f1e434920fa976253576151effe9",
+                "url": "https://api.github.com/repos/squizlabs/PHP_CodeSniffer/zipball/dceec07328401de6211037abbb18bda423677e26",
+                "reference": "dceec07328401de6211037abbb18bda423677e26",
                 "shasum": ""
             },
             "require": {
@@ -581,7 +585,7 @@
                 "phpcs",
                 "standards"
             ],
-            "time": "2019-09-26 23:12:26"
+            "time": "2020-01-30T22:20:29+00:00"
         },
         {
             "name": "wp-coding-standards/wpcs",
@@ -624,7 +628,7 @@
                 "standards",
                 "wordpress"
             ],
-            "time": "2018-12-18 09:43:51"
+            "time": "2018-12-18T09:43:51+00:00"
         },
         {
             "name": "wptrt/wpthemereview",
@@ -694,7 +698,7 @@
                 "themes",
                 "wordpress"
             ],
-            "time": "2018-10-31 17:02:38"
+            "time": "2018-10-31T17:02:38+00:00"
         }
     ],
     "aliases": [],
