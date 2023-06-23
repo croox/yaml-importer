@@ -16,8 +16,8 @@ Clone the repository and make it your current working directory.
 
 ```
 # Checkout the `generated` and `develop` branches
-git checkout generated
-git checkout develop
+git checkout generated && git pull
+git checkout develop && git pull
 
 # Install npm dependencies
 npm install
@@ -45,6 +45,7 @@ grunt build
 - `git`
 - `grunt`  and  `grunt-cli`
 - `rsync`
+- `gettext`
 - `convert` from ImageMagick. Tested with ImageMagick `6.8.9-9`
 
 # Support and feedback

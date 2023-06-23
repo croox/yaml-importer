@@ -1,0 +1,7 @@
+{
+  "packages": [
+		"a5hleyrich/wp-background-processing",
+		"mustangostang/spyc",
+		"cmb2/cmb2"
+  ]
+}
