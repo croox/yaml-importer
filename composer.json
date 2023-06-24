@@ -1,11 +1,10 @@
 {
-  "require": {
-  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "require": {},
   "require-dev": {
-    "croox/wp-dev-env-frame": "0.7.3",
+    "croox/wp-dev-env-frame": "0.15.1",
     "composer/installers": "*",
-    "dealerdirect/phpcodesniffer-composer-installer": "0.5.0",
-    "wptrt/wpthemereview": "0.1.0",
     "mustangostang/spyc": "^0.6.2",
     "a5hleyrich/wp-background-processing": "^1.0",
     "cmb2/cmb2": "^2.6"

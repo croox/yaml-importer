@@ -1,9 +1,8 @@
 <?php
 /**
- * Yaml Importer Plugin init
+ * YAML Importer Plugin init
  *
- * @package WordPress
- * @subpackage yaml-importer
+ * @package yaml-importer
  */
 
 // If this file is called directly, abort.

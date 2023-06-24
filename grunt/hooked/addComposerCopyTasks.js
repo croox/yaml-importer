@@ -1,13 +1,15 @@
-
+const path = require('path');
 const addComposerCopyTask = require('../addComposerCopyTask');
 
 const addComposerCopyTasks = grunt => {
 
-	[
-		'a5hleyrich/wp-background-processing',
-		'mustangostang/spyc',
-	].map( name => addComposerCopyTask( grunt, { name } ) );
+	let packages = grunt.file.readJSON( path.resolve( 'grunt/copyComposerPackages.json' ) );
+	packages = packages ? packages.packages : packages;
 
+	if ( ! packages.length )
+		return;
+
+	[...packages].map( name => addComposerCopyTask( grunt, { name } ) );
 }
 
 module.exports = addComposerCopyTasks;
