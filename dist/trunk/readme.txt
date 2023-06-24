@@ -55,8 +55,13 @@ Upload and install this Theme the same way you'd install any other Theme.
 
 
 # 
-
 == Changelog ==
+
+## 0.1.3 - 2023-06-24
+Update dependencies
+
+### Changed
+- Updated to generator-wp-dev-env#1.6.4 ( wp-dev-env-grunt#1.5.2 wp-dev-env-frame#0.15.1 )
 
 ## 0.1.2 - 2019-09-27
 Print parsed yaml file to import.log

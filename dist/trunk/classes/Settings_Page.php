@@ -82,7 +82,7 @@ class Settings_Page {
 		// select the file
 		$cmb->add_field( array(
 			'name'             	=> 'Test Select',
-			'desc'             	=> 'Select a YAML file from your wp-content/yaml_importer directory.',
+			'desc'             	=> 'Select a YAML file from your wp-content/yaml-importer directory.',
 			'id'               	=> 'file',
 			'type'             	=> 'select',
 			'show_option_none'	=> false,

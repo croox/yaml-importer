@@ -8,8 +8,8 @@ if ( ! defined( 'WPINC' ) ) {
 function yaim_include_fun() {
 
 	$paths = array(
-		'/inc/fun/yaim_init_cmb2_cmb2.php',
-		'/inc/fun/yaim_log.php',
+		'inc/fun/yaim_init_cmb2_cmb2.php',
+		'inc/fun/yaim_log.php',
 	);
 
 	if ( count( $paths ) > 0 ) {
