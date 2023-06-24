@@ -111,6 +111,9 @@ class Import_Posts extends Import_Base {
 				array_key_exists( 'tax_input', $atts[$to_fix] )
 			) {
 				foreach( $atts[$to_fix]['tax_input'] as $tax_slug => $terms ) {
+					if ( ! is_array( $terms ) )
+						continue;
+
 					$tax = get_taxonomy( $tax_slug );
 
 					if ( $tax->hierarchical ) {

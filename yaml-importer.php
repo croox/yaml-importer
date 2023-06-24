@@ -3,7 +3,7 @@
 	Plugin Name: YAML Importer
 	Plugin URI: https://github.com/croox/yaml-importer
 	Description: Import Posts from YAML
-	Version: 0.1.2
+	Version: 0.1.3
 	Author: croox
 	Author URI: https://github.com/croox
 	License: GNU General Public License v2 or later

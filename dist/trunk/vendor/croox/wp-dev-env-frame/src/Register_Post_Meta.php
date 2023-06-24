@@ -243,7 +243,6 @@ abstract class Register_Post_Meta {
 	/**
 	 * Default update method for string values.
 	 * Just updates the post_meta with the new Value.
-	 * If Wpml is used, will update post_meta for all translations as well.
 	 *
 	 * @param array	$value			???
 	 * @param array	$object			???
@@ -251,7 +250,7 @@ abstract class Register_Post_Meta {
 	 * @since 0.5.0
 	 */
 	protected function field_update__string( $value, $object, $field_name ) {
-		return utils\Wpml::update_post_meta( $object, $field_name, $value );
+		return update_post_meta( $object->ID, $field_name, $value );
 	}
 
 
@@ -259,7 +258,6 @@ abstract class Register_Post_Meta {
 	 * Default update method for serialized json string values.
 	 * Checks if valid json, and updates the post_meta with the decoded Value.
 	 * WordPress will store the value as serialized php associative array.
-	 * If Wpml is used, will update post_meta for all translations as well.
 	 *
 	 * @param array	$value			???
 	 * @param array	$object			???
@@ -272,7 +270,7 @@ abstract class Register_Post_Meta {
 			error_log( 'Meta value: ' . var_dump( $value ) );
 			return false;
 		}
-		return utils\Wpml::update_post_meta( $object, $field_name, json_decode( $value, true ) );
+		return update_post_meta( $object->ID, $field_name, json_decode( $value, true ) );
 	}
 
 }

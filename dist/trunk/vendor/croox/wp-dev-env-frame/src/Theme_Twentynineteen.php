@@ -280,50 +280,43 @@ abstract class Theme_Twentynineteen extends Theme {
 		}
 
 		/**
-		 * Filter TEST__mein_block default saturation level.
 		 *
-		 * @since TEST__mein_block 1.0
-		 *
+		 * @since 0.2.0
 		 * @param int $saturation Color saturation level.
 		 */
 		$saturation = apply_filters( $this->prefix . '_custom_colors_saturation', 100 );
 		$saturation = absint( $saturation ) . '%';
 
 		/**
-		 * Filter TEST__mein_block default selection saturation level.
-		 *
-		 * @since TEST__mein_block 1.0
-		 *
+		*
+		 * @since 0.2.0
 		 * @param int $saturation_selection Selection color saturation level.
 		 */
 		$saturation_selection = absint( apply_filters( $this->prefix . '_custom_colors_saturation_selection', 50 ) );
 		$saturation_selection = $saturation_selection . '%';
 
 		/**
-		 * Filter TEST__mein_block default lightness level.
+		 * Filter  default lightness level.
 		 *
-		 * @since TEST__mein_block 1.0
-		 *
+		 * @since 0.2.0
 		 * @param int $lightness Color lightness level.
 		 */
 		$lightness = apply_filters( $this->prefix . '_custom_colors_lightness', 33 );
 		$lightness = absint( $lightness ) . '%';
 
 		/**
-		 * Filter TEST__mein_block default hover lightness level.
+		 * Filter  default hover lightness level.
 		 *
-		 * @since TEST__mein_block 1.0
-		 *
+		 * @since 0.2.0
 		 * @param int $lightness_hover Hover color lightness level.
 		 */
 		$lightness_hover = apply_filters( $this->prefix . '_custom_colors_lightness_hover', 23 );
 		$lightness_hover = absint( $lightness_hover ) . '%';
 
 		/**
-		 * Filter TEST__mein_block default selection lightness level.
+		 * Filter  default selection lightness level.
 		 *
-		 * @since TEST__mein_block 1.0
-		 *
+		 * @since 0.2.0
 		 * @param int $lightness_selection Selection color lightness level.
 		 */
 		$lightness_selection = apply_filters( $this->prefix . '_custom_colors_lightness_selection', 90 );
@@ -527,10 +520,9 @@ abstract class Theme_Twentynineteen extends Theme {
 		}
 
 		/**
-		 * Filters TEST__mein_block custom colors CSS.
+		 * Filters  custom colors CSS.
 		 *
-		 * @since TEST__mein_block 1.0
-		 *
+		 * @since 0.2.0
 		 * @param string $css           Base theme colors CSS.
 		 * @param int    $primary_color The user's selected color hue.
 		 * @param string $saturation    Filtered theme color saturation level.

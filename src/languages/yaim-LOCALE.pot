@@ -1,54 +1,39 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# Copyright (C) 2023 yaml-importer
 # This file is distributed under the same license as the yaml-importer package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-#
-#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: yaml-importer 0.1.2\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-09-27 19:04+0545\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"Project-Id-Version: yaml-importer\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2023-06-24 01:09+0000\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-KeywordsList: __;_e;_ex:1,2c;_n:1,2;_n_noop:1,2;_nx:1,2,4c;_nx_noop:1,2,3c;_x:1,2c;esc_attr__;esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c\n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Poedit-SearchPathExcluded-0: *.js\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/classes/Import_Base.php:153
-#, php-format
+#: ../classes/Import_Base.php:153
 msgid "\"%s\" is not translatable."
 msgstr ""
 
-#: src/classes/Import_Base.php:211
-#, php-format
+#: ../classes/Import_Base.php:211
 msgid "\"%s\" has translated and non-translated input."
 msgstr ""
 
-#: src/classes/Settings_Page.php:58
+#: ../classes/Settings_Page.php:58
 msgid "YAML Importer"
 msgstr ""
 
-#. /add_submenu_page().
-#.
-#. The option key and admin menu page slug.
-#. 'icon_url'        => 'dashicons-download', // Menu icon. Only applicable if 'parent_slug' is left empty.
-#. 'menu_title'      => esc_html__( 'Options', 'yaim' ), // Falls back to 'title' (above).
-#. Make options page a submenu item of the themes menu.
-#. 'capability'      => 'manage_options', // Cap required to view options-page.
-#. 'position'        => 1, // Menu position. Only applicable if 'parent_slug' is left empty.
-#. 'admin_menu_hook' => 'network_admin_menu', // 'network_admin_menu' to add network-level options page.
-#. 'display_cb'      => false, // Override the options-page form output (CMB2_Hookup::options_page_output()).
-#: src/classes/Settings_Page.php:74
+#: ../classes/Settings_Page.php:74
 msgid "Start"
 msgstr ""
 
-#: src/classes/Settings_Page.php:101
+#: ../classes/Settings_Page.php:101
 msgid "Print parsed file to import.log"
 msgstr ""
 
-#: src/classes/Settings_Page.php:102
+#: ../classes/Settings_Page.php:102
 msgid "Import"
 msgstr ""

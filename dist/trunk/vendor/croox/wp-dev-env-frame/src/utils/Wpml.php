@@ -126,6 +126,15 @@ class Wpml {
 	* @return array            $args 		Returns $args unchanged.
 	*/
 	public static function _rest_query_switch_lang( $args, $request ) {
+		$params = $request->get_params();
+
+		// Do not switch language, if lang parameter already set
+		if ( array_key_exists( 'lang', $params )
+			|| array_key_exists( 'wpml_language', $params )
+		) {
+			return $args;
+		}
+
 		self::_rest_request_switch_lang( $request );
 		return $args;
 	}
@@ -144,7 +153,11 @@ class Wpml {
 		// '2': A different domain per language.
 		// '3': Language name added as a parameter.
 
-		$referer_url = $request->get_headers()['referer'][0];
+		$referer_url = Arr::get( $request->get_headers(), 'referer.0', false );
+		if ( ! $referer_url ) { // probably internal request
+			return;
+		}
+
 		$referer_parsed = parse_url( $referer_url );
 		// Use path after site_url, instead of parsed url path.
 		$referer_path_arr = array_values( array_filter(
